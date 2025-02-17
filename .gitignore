@@ -1,0 +1,7 @@
+# Node (frontend)
+frontend/node_modules
+frontend/.next
+
+# Python (backend)
+backend/venv
+backend/__pycache__
