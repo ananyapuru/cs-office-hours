@@ -1,12 +1,7 @@
-from flask import Flask
-from flask_cors import CORS
+# backend/app.py
+from app import create_app
 
-app = Flask(__name__)
-CORS(app)  # Enabling cross-origin requests
-
-@app.route('/')
-def hello():
-    return "Hello from Flask!"
+app = create_app()
 
 if __name__ == '__main__':
     app.run(debug=True)
