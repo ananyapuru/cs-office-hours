@@ -1,26 +1,14 @@
 // frontend/src/app/components/SignOutButton.tsx
 'use client';
 
+import React from 'react';
 import Button from '@mui/material/Button';
-import axios from '../utils/axios';
-import { useContext } from 'react';
-import UserContext from '../contexts/UserContext';
+import { API_ENDPOINTS } from '../constants';
 
 const SignOutButton: React.FC = () => {
-  const { checkContext } = useContext(UserContext);
-
-  const handleSignOut = async () => {
-    try {
-      // Calling the backend logout endpoint TODO: fix this
-      const { data } = await axios.get<{ success: boolean }>('/cas/logout', {
-        withCredentials: true,
-      });
-      if (data.success) {
-        checkContext();
-      }
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+  const handleSignOut = () => {
+    // Full page redirect to the custom /logout route on your backend
+    window.location.href = `${API_ENDPOINTS.BACKEND_URL}/logout`;
   };
 
   return (

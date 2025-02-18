@@ -26,7 +26,7 @@ def create_app():
     app.config['CAS_LOGIN_ROUTE'] = '/cas/login'
     
     # Set the logout route later:
-    # app.config['CAS_LOGOUT_ROUTE'] = '/logout/'
+    app.config['CAS_LOGOUT_ROUTE'] = '/cas/logout'
     
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['SESSION_COOKIE_DOMAIN'] = 'localhost'
