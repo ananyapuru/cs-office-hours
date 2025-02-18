@@ -1,23 +1,22 @@
-// app/page.jsx
-'use client'; // we do this to ensure client side rendering
+// frontend/src/app/page.tsx
+'use client';
 
-import { useState, useEffect } from 'react';
-import { API_ENDPOINTS } from './constants';
+import React from 'react';
+import SignInButton from './components/SignInButton';
+import SignOutButton from './components/SignOutButton';
 
-export default function Home() {
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    fetch(API_ENDPOINTS.BASE_URL)
-      .then((response) => response.text())
-      .then((data) => setMessage(data))
-      .catch((error) => console.error('Error fetching data:', error));
-  }, []);
-
+const HomePage: React.FC = () => {
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <h1>CS Office Hours</h1>
-      <p>{message || 'Loading...'}</p>
+      <h1>CAS Authentication Demo</h1>
+      <div style={{ marginBottom: '1rem' }}>
+        <SignInButton />
+      </div>
+      <div>
+        <SignOutButton />
+      </div>
     </div>
   );
-}
+};
+
+export default HomePage;
