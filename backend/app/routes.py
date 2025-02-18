@@ -19,6 +19,6 @@ def check():
 @main_bp.route('/after_login')
 def after_login():
     username = session.get('CAS_USERNAME')
-    # Redirect to the frontend welcome page after successful login.
+    # Redirecting to the frontend welcome page after successful login.
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
     return redirect(f"{frontend_url}/welcome")
