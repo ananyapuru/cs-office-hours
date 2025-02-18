@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../constants';
 
 const SignOutButton: React.FC = () => {
   const handleSignOut = () => {
-    // Full page redirect to the custom /logout route on your backend
+    // Full page redirect to the custom /logout route
     window.location.href = `${API_ENDPOINTS.BACKEND_URL}/logout`;
   };
 

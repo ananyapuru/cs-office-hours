@@ -27,6 +27,9 @@ def create_app():
     
     # Set the logout route later:
     app.config['CAS_LOGOUT_ROUTE'] = '/cas/logout'
+    # Redirection route after logout. Not needed since we have custom logout route defined in routes, but here as a backup.
+    app.config['CAS_AFTER_LOGOUT'] = os.getenv('FRONTEND_URL', 'http://localhost:3000') + '/goodbye'
+
     
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['SESSION_COOKIE_DOMAIN'] = 'localhost'

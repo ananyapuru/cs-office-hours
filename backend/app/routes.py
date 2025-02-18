@@ -30,7 +30,12 @@ def my_logout():
     Custom logout route that calls the CAS logout function and then redirects
     the user to the 'goodbye' page on the frontend.
     """
-    # Clears CAS session, etc.
-    cas_logout()
+    # clear local session to ensure we are actually logged out and not just redirected
+    session.clear()
+    
+    # Do a service redirect to your frontend goodbye page.
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
-    return redirect(f"{frontend_url}/goodbye")
+    cas_server = current_app.config.get('CAS_SERVER', 'https://secure.its.yale.edu/cas')
+    
+    # Apparently, the CAS server expects a "service" parameter which == the URL to redirect to after CAS logout.
+    return redirect(f"{cas_server}/logout?service={frontend_url}/goodbye")
