@@ -3,9 +3,13 @@ click==8.1.8
 Flask==2.2.5
 flask-cas-ng==1.1.0
 Flask-Cors==5.0.0
+Flask-SQLAlchemy==3.1.1
 itsdangerous==2.2.0
 Jinja2==3.1.5
 MarkupSafe==3.0.2
+psycopg2==2.9.10
 python-dotenv==1.0.1
+SQLAlchemy==2.0.38
+typing_extensions==4.12.2
 Werkzeug==3.1.3
 xmltodict==0.14.2

@@ -5,8 +5,10 @@ from flask_cors import CORS
 from flask_cas import CAS 
 from dotenv import load_dotenv
 from .routes import main_bp
+from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()  # Loading our environment variables from .env file
+db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
@@ -39,7 +41,12 @@ def create_app():
     cas = CAS(app, '/cas')
 
     app.extensions['cas'] = cas
-    
+
+
+    # Initialize DB connection
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    app.config["SQLALCHEMY_TRACK_NOTIFICATIONS"] = False
+    db.init_app(app)
 
     app.register_blueprint(main_bp)
 
