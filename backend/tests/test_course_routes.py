@@ -1,6 +1,12 @@
+import os
 import requests
+from dotenv import load_dotenv
 
-BASE_URL = "http://localhost:5002" 
+# Load environment variables from .env file
+load_dotenv()
+
+# Get BASE_URL from environment
+BASE_URL = os.getenv("BASE_URL")
 
 # Sample course data
 test_course = {

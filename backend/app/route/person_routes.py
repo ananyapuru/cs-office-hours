@@ -111,6 +111,41 @@ def update_person(net_id):
     db.session.commit()
     return jsonify({"message": f"Person with NetID: {net_id} was updated successfully"}), 200
 
+# PATCH: Update a specific field (Partial Update)
+@person_bp.route("/person/<net_id>", methods=["PATCH"])
+def patch_person(net_id):
+    person = Person.query.get(net_id)
+    if not person:
+        return jsonify({"error": f"Person with NetID: {net_id} was not found"}), 404
+
+    data = request.json
+    required_fields = ["first_name", "last_name", "yale_email", "class_year"]
+
+    for key, value in data.items():
+        if key == "net_id":
+            return jsonify({"error": "NetID cannot be changed"}), 400
+
+        if hasattr(person, key):
+            # Prevent updating required columns with empty strings
+            if key in required_fields and value == "":
+                return jsonify({"error": f"{key} cannot be empty, required field"}), 400
+            
+            # Ensure email is valid if being updated
+            if key == "yale_email" and not re.match(r"^[a-zA-Z0-9._%+-]+@yale\.edu$", value):
+                return jsonify({"error": "Invalid Yale email format"}), 400
+
+            # Ensure class year is an integer
+            if key == "class_year":
+                try:
+                    value = int(value)
+                except ValueError:
+                    return jsonify({"error": "Class year must be a number"}), 400
+
+            setattr(person, key, value.strip() if isinstance(value, str) else value)
+
+    db.session.commit()
+    return jsonify({"message": f"Person with NetID: {net_id} was updated successfully"}), 200
+
 # DELETE: Remove a person from the database
 @person_bp.route("/person/<net_id>", methods=["DELETE"])
 def delete_person(net_id):

@@ -1,6 +1,12 @@
+import os
 import requests
+from dotenv import load_dotenv
 
-BASE_URL = "http://127.0.0.1:5002"  
+# Load environment variables from .env file
+load_dotenv()
+
+# Get BASE_URL from environment
+BASE_URL = os.getenv("BASE_URL")
 
 # Sample test person data
 test_person = {
@@ -91,6 +97,34 @@ def test_update_nonexistent_person():
     assert response.status_code == 404
     assert "not found" in response.json()["error"]
 
+def test_patch_update_multiple_fields():
+    """Test updating multiple fields using PATCH"""
+    update_data = {"first_name": "John", "last_name": "Doe", "residential_college": "Branford"}
+    response = requests.patch(f"{BASE_URL}/person/{test_person['net_id']}", json=update_data)
+    assert response.status_code == 200
+    assert "updated successfully" in response.json()["message"]
+
+def test_patch_update_empty_required_field():
+    """Test PATCH updating a required field with an empty value (should fail)"""
+    update_data = {"first_name": ""}
+    response = requests.patch(f"{BASE_URL}/person/{test_person['net_id']}", json=update_data)
+    assert response.status_code == 400
+    assert "cannot be empty" in response.json()["error"]
+
+def test_patch_update_invalid_email():
+    """Test PATCH updating email to an invalid format (should fail)"""
+    update_data = {"yale_email": "invalid@notyale.com"}
+    response = requests.patch(f"{BASE_URL}/person/{test_person['net_id']}", json=update_data)
+    assert response.status_code == 400
+    assert "Invalid Yale email format" in response.json()["error"]
+
+def test_patch_update_nonexistent_person():
+    """Test PATCH updating a nonexistent person (should return 404)"""
+    update_data = {"first_name": "Ghost"}
+    response = requests.patch(f"{BASE_URL}/person/nonexistent", json=update_data)
+    assert response.status_code == 404
+    assert "not found" in response.json()["error"]
+    
 def test_delete_person():
     """Test deleting a person"""
     response = requests.delete(f"{BASE_URL}/person/{test_person['net_id']}")

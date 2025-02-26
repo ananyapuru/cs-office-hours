@@ -1,6 +1,12 @@
+import os
 import requests
+from dotenv import load_dotenv
 
-BASE_URL = "http://127.0.0.1:5002"  
+# Load environment variables from .env file
+load_dotenv()
+
+# Get BASE_URL from environment
+BASE_URL = os.getenv("BASE_URL")
 
 # Sample test data
 test_person = {
@@ -38,7 +44,7 @@ def setup_module(module):
     requests.post(f"{BASE_URL}/course", json=test_course)
     requests.post(f"{BASE_URL}/ula", json=test_ula)
 
-# CLEANUP: Remove the ULA after tests
+# CLEANUP: Remove the data after tests
 def teardown_module(module):
     """Remove test data after tests"""
     requests.delete(f"{BASE_URL}/ula/{test_ula['net_id']}/{test_ula['course_id']}")
