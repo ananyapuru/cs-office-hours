@@ -62,10 +62,8 @@ def enroll_student():
     # The person and course must exist before enrolling a student in a course
     person_exists = Person.query.get(data["net_id"])
     course_exists = Course.query.get(data["course_id"])
-
     if not person_exists:
         return jsonify({"error": f"Person {data['net_id']} does not exist"}), 404
-
     if not course_exists:
         return jsonify({"error": f"Course {data['course_id']} does not exist"}), 404
 
@@ -130,7 +128,7 @@ def append_student_feedback(net_id, course_id):
 
     if student.feedback is None:
         student.feedback = []
-    student.feedback.extend(data["feedback"])  # Append new messages
+    student.feedback.extend(data["feedback"])  # Append new message
     db.session.commit()
     return jsonify({"message": f"Feedback added for student {net_id} in course {course_id}"}), 200
 
@@ -143,7 +141,7 @@ def edit_student_feedback(net_id, course_id, index):
 
     data = request.json
 
-     # Ensure that what we are trying to send in as feedback is a string
+    # Ensure that what we are trying to send in as feedback is a string
     if "feedback" not in data or not isinstance(data["feedback"], str):
         return jsonify({"error": "Feedback must be a string"}), 400
 
