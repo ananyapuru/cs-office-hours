@@ -5,7 +5,7 @@ import re
 # Create a Blueprint for the Person routes
 person_bp = Blueprint("person", __name__)
 
-# GET: Get All Persons
+# GET: Fetch All Persons
 @person_bp.route("/person", methods = ["GET"])
 def get_all_people():
     people = Person.query.all()
@@ -20,7 +20,7 @@ def get_all_people():
         } for p in people
     ]), 200
 
-# GET: Get a single person by net_id
+# GET: Fetch a single person by net_id
 @person_bp.route("/person/<net_id>", methods = ["GET"])
 def get_person(net_id):
     person = Person.query.get(net_id)

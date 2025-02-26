@@ -42,15 +42,13 @@ class Course(db.Model):
 class Student(db.Model):
     __tablename__ = "student"
 
-    # Primary Key: Default Int
-    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    # Primary Key: Composite Primary Key (NetID, CourseID)
+    # Relations (1: Many: Person -> Students; Many: 1: Students -> Course)
+    net_id = db.Column(db.String, db.ForeignKey("person.net_id"), primary_key = True) # Foreign Keys to Relate back to Person and Course Tables
+    course_id = db.Column(db.String, db.ForeignKey("course.course_id"), primary_key = True)
 
     # Columns
     feedback = db.Column(ARRAY(db.String), nullable = True, server_default = "{}") # Feedback array that contains lists of messages
-
-    # Relations (1: Many: Person -> Students; Many: 1: Students -> Course)
-    net_id = db.Column(db.String, db.ForeignKey("person.net_id"), nullable = False) # Foreign Keys to Relate back to Person and Course Tables
-    course_id = db.Column(db.String, db.ForeignKey("course.course_id"), nullable = False)
 
     # Enforce that no duplicate students can be enrolled in the same course
     __table_args__ = (db.UniqueConstraint("net_id", "course_id", name="unique_student_course"),)
@@ -58,16 +56,14 @@ class Student(db.Model):
 class ULA(db.Model):
     __tablename__ = "ula"
 
-    # Primary Key: Default Int
-    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    # Primary Key: Composite Primary Key (NetID, CourseID)
+    # Relations (1: Many: Person -> ULAs; Many: 1: ULAs -> Course)
+    net_id = db.Column(db.String, db.ForeignKey("person.net_id"), primary_key = True) # Foreign Keys to Relate back to Person and Course Tables
+    course_id = db.Column(db.String, db.ForeignKey("course.course_id"), primary_key = True)
 
     # Columns
     feedback = db.Column(ARRAY(db.String), nullable = True, server_default = "{}") # Feedback array that contains lists of messages
     zoom_link = db.Column(db.String, nullable = True) 
-
-    # Relations (1: Many: Person -> ULAs; Many: 1: ULAs -> Course)
-    net_id = db.Column(db.String, db.ForeignKey("person.net_id"), nullable = False) # Foreign Keys to Relate back to Person and Course Tables
-    course_id = db.Column(db.String, db.ForeignKey("course.course_id"), nullable = False)
 
     # Enforce that no duplicate ULAs can be hired for the same course
     __table_args__ = (db.UniqueConstraint("net_id", "course_id", name = "unique_ula_course"),)
@@ -75,12 +71,10 @@ class ULA(db.Model):
 class Admin(db.Model):
     __tablename__ = "admin"
 
-    # Primary Key: Default Int
-    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
-
-    # Columns / Relations
-    net_id = db.Column(db.String, db.ForeignKey("person.net_id"), nullable = False) # Foreign Keys to Relate back to Person and Course Tables
-    course_id = db.Column(db.String, db.ForeignKey("course.course_id"), nullable = False)
+    # Primary Key: Composite Primary Key (NetID, CourseID)
+    # Relations (1: Many: Person -> Admin; Many: 1: Admin -> Course)
+    net_id = db.Column(db.String, db.ForeignKey("person.net_id"), primary_key = True) # Foreign Keys to Relate back to Person and Course Tables
+    course_id = db.Column(db.String, db.ForeignKey("course.course_id"), primary_key = True)
 
     # Enforce that no duplicate Admins / Instructors can be hired for the same course
     __table_args__ = (db.UniqueConstraint("net_id", "course_id", name = "unique_admin_course"),)
