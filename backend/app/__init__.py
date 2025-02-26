@@ -13,6 +13,7 @@ db = SQLAlchemy()
 
 # Delay imports of routes until after db is initialized
 from .route.person_routes import person_bp
+from .route.course_routes import course_bp
 
 def create_app():
     app = Flask(__name__)
@@ -54,5 +55,6 @@ def create_app():
 
     app.register_blueprint(main_bp)
     app.register_blueprint(person_bp)
+    app.register_blueprint(course_bp)
 
     return app
