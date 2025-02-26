@@ -5,10 +5,14 @@ from flask_cors import CORS
 from flask_cas import CAS 
 from dotenv import load_dotenv
 from .routes import main_bp
+
 from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()  # Loading our environment variables from .env file
 db = SQLAlchemy()
+
+# Delay imports of routes until after db is initialized
+from .route.person_routes import person_bp
 
 def create_app():
     app = Flask(__name__)
@@ -49,5 +53,6 @@ def create_app():
     db.init_app(app)
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(person_bp)
 
     return app

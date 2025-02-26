@@ -1,6 +1,7 @@
+from app import db
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import ARRAY
 
-db = SQLAlchemy()
 
 class Person(db.Model):
     __tablename__ = "person"
@@ -21,7 +22,7 @@ class Person(db.Model):
     admins = db.relationship("Admin", backref = "person", lazy = True)
 
 class Course(db.Model):
-    __tablename__ = "Course"
+    __tablename__ = "course"
 
     # Primary Key: CourseID -> Concatenation of course dept, code, academic year, and academic semester: CPSC_323_AY24-25_S25
     course_id = db.Column(db.String, primary_key = True)  
@@ -45,7 +46,7 @@ class Student(db.Model):
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
 
     # Columns
-    feedback = db.Column(ARRAY(db.String), nullable = True, default = []) # Feedback array that contains lists of messages
+    feedback = db.Column(ARRAY(db.String), nullable = True, server_default = "{}") # Feedback array that contains lists of messages
 
     # Relations (1: Many: Person -> Students; Many: 1: Students -> Course)
     net_id = db.Column(db.String, db.ForeignKey("person.net_id"), nullable = False) # Foreign Keys to Relate back to Person and Course Tables
@@ -61,7 +62,7 @@ class ULA(db.Model):
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
 
     # Columns
-    feedback = db.Column(ARRAY(db.String), nullable = True, default = []) # Feedback array that contains lists of messages
+    feedback = db.Column(ARRAY(db.String), nullable = True, server_default = "{}") # Feedback array that contains lists of messages
     zoom_link = db.Column(db.String, nullable = True) 
 
     # Relations (1: Many: Person -> ULAs; Many: 1: ULAs -> Course)
