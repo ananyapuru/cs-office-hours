@@ -14,8 +14,7 @@ def get_all_courses():
             "academic_year": c.academic_year,
             "academic_term": c.academic_term,
             "enrollment_size": c.enrollment_size,
-            "course_staff_size": c.course_staff_size,
-            "queue_status": c.queue_status
+            "course_staff_size": c.course_staff_size
         } for c in courses
     ]), 200
 
@@ -30,8 +29,7 @@ def get_course(course_id):
         "academic_year": course.academic_year,
         "academic_term": course.academic_term,
         "enrollment_size": course.enrollment_size,
-        "course_staff_size": course.course_staff_size,
-        "queue_status": course.queue_status
+        "course_staff_size": course.course_staff_size
     }), 200
 
 # POST: Create a new course
@@ -40,7 +38,7 @@ def create_course():
     data = request.json
 
     # Required fields
-    required_fields = ["course_id", "academic_year", "academic_term", "enrollment_size", "course_staff_size", "queue_status"]
+    required_fields = ["course_id", "academic_year", "academic_term", "enrollment_size", "course_staff_size"]
 
     # Enforce that all the required fields are there in the POST request
     missing_fields = [field for field in required_fields if not data.get(field)]
@@ -56,8 +54,7 @@ def create_course():
         academic_year = data["academic_year"].strip(),
         academic_term = data["academic_term"].strip(),
         enrollment_size = int(data["enrollment_size"]),
-        course_staff_size = int(data["course_staff_size"]),
-        queue_status = bool(data["queue_status"])
+        course_staff_size = int(data["course_staff_size"])
     )
 
     try:
@@ -76,7 +73,7 @@ def update_course(course_id):
         return jsonify({"error": f"Course {course_id} was not found"}), 404
 
     data = request.json
-    required_fields = ["course_id", "academic_year", "academic_term", "enrollment_size", "course_staff_size", "queue_status"]
+    required_fields = ["course_id", "academic_year", "academic_term", "enrollment_size", "course_staff_size"]
 
     for key, value in data.items():
         if hasattr(course, key):
@@ -91,8 +88,6 @@ def update_course(course_id):
                     value = int(value)
                 except ValueError:
                     return jsonify({"error": f"{key} must be an integer"}), 400
-            elif key == "queue_status": # Ensure that queue_status is a Bool
-                value = bool(value)
             setattr(course, key, value.strip() if isinstance(value, str) else value)
 
     db.session.commit()

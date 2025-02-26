@@ -14,8 +14,7 @@ test_course = {
     "academic_year": "2024-2025",
     "academic_term": "Spring",
     "enrollment_size": 100,
-    "course_staff_size": 5,
-    "queue_status": True
+    "course_staff_size": 5
 }
 
 def test_create_course():
