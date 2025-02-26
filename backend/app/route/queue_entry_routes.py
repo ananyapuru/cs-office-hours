@@ -1,9 +1,38 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, Queue, Course, Person, ULA, QueueEntry
+from app.models import db, Queue, Person, ULA, QueueEntry
 from sqlalchemy.sql import func
 
 # Create a Blueprint for the Queue routes
 queue_entry_bp = Blueprint("queue_entry", __name__)
+
+# GET: Get all the queue entries within a Queue
+@queue_entry_bp.route("/queue/course/<course_id>/entries", methods=["GET"])
+def get_all_queue_entries_for_course(course_id):
+    """Fetches all queue entries for a course."""
+    queue = Queue.query.filter_by(course_id=course_id).first()
+    if not queue:
+        return jsonify({"error": f"Queue for course {course_id} not found"}), 404
+
+    queue_entries = QueueEntry.query.filter_by(queue_id=queue.queue_id).order_by(QueueEntry.position).all()
+    if not queue_entries:
+        return jsonify({"error": f"No queue entries found for course {course_id}"}), 404
+
+    return jsonify([
+        {
+            "queue_entry_id": q.queue_entry_id,
+            "queue_id": q.queue_id,
+            "net_id": q.net_id,
+            "ula_net_id": q.ula_net_id,
+            "position": q.position,
+            "topic_name": q.topic_name,
+            "zoom_link": q.zoom_link,
+            "status": q.status,
+            "time_entered": q.time_entered,
+            "time_started": q.time_started,
+            "time_finished": q.time_finished
+        } for q in queue_entries
+    ]), 200
+
 
 # GET: Fetch queue entries for a student in a specific course
 @queue_entry_bp.route("/queue/course/<course_id>/person/<net_id>", methods=["GET"])
@@ -66,7 +95,7 @@ def add_to_queue(course_id):
         ula_net_id = None,
         position = position,
         topic_name = data["topic_name"].strip(),
-        zoom_link = data.get("zoom_link", "").strip() or None
+        zoom_link = data.get("zoom_link", "").strip() or None,
         status = "Pending",
         time_entered = func.now(),
         time_started = None,
@@ -119,7 +148,7 @@ def assign_ula(queue_entry_id):
         return jsonify({"error": f"ULA {data['ula_net_id']} does not exist"}), 404
 
     # Check if the ULA is assigned to the same course
-    ula_assigned = ULA.query.filter_by(net_id=data["ula_net_id"], course_id=queue_entry.course_id).first()
+    ula_assigned = ULA.query.filter_by(net_id=data["ula_net_id"], course_id=queue_entry.queue.course_id).first()
     if not ula_assigned:
         return jsonify({"error": f"ULA {data['ula_net_id']} is not assigned to course {queue_entry.course_id}"}), 403
     

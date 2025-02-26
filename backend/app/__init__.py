@@ -17,6 +17,8 @@ from .route.course_routes import course_bp
 from .route.student_routes import student_bp
 from .route.ula_routes import ula_bp
 from .route.admin_routes import admin_bp
+from .route.queue_routes import queue_bp
+from .route.queue_entry_routes import queue_entry_bp
 
 def create_app():
     app = Flask(__name__)
@@ -62,5 +64,7 @@ def create_app():
     app.register_blueprint(student_bp)
     app.register_blueprint(ula_bp)
     app.register_blueprint(admin_bp)
-
+    app.register_blueprint(queue_bp)
+    app.register_blueprint(queue_entry_bp)
+    
     return app

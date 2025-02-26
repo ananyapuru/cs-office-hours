@@ -61,30 +61,3 @@ def delete_queue(course_id):
     db.session.commit()
 
     return jsonify({"message": f"Queue for course {course_id} has been deleted"}), 200
-
-# GET: Get all the queue entries within a Queue
-@queue_bp.route("/queue/course/<course_id>/entries", methods=["GET"])
-def get_all_queue_entries_for_course(course_id):
-    """Fetches all queue entries for a course."""
-    queue = Queue.query.filter_by(course_id=course_id).first()
-    if not queue:
-        return jsonify({"error": f"Queue for course {course_id} not found"}), 404
-
-    queue_entries = QueueEntry.query.filter_by(queue_id=queue.queue_id).order_by(QueueEntry.position).all()
-    if not queue_entries:
-        return jsonify({"error": f"No queue entries found for course {course_id}"}), 404
-
-    return jsonify([
-        {
-            "queue_entry_id": q.queue_entry_id,
-            "queue_id": q.queue_id,
-            "net_id": q.net_id,
-            "ula_net_id": q.ula_net_id,
-            "position": q.position,
-            "topic_name": q.topic_name,
-            "zoom_link": q.zoom_link,
-            "status": q.status,
-            "time_entered": q.time_entered,
-            "time_started": q.time_started,
-            "time_finished": q.time_finished
-    } for q in queue_entries]), 200

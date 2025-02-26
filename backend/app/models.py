@@ -83,7 +83,7 @@ class Queue(db.Model):
     __tablename__ = "queue"
 
     # Primary Key: Each course gets exactly ONE queue instance
-    queue_id = db.Column(db.Integer, primary_key = True, autoincrement = True, nullable = False)
+    queue_id = db.Column(db.Integer, primary_key = True, autoincrement = True, nullable = True)
 
     # Foreign key: Connect back to Course
     course_id = db.Column(db.String, db.ForeignKey("course.course_id"), unique = True, nullable = False) 
@@ -93,7 +93,7 @@ class Queue(db.Model):
 
     # Relationships
     course = db.relationship("Course", backref = db.backref("queue", uselist = False)) # 1:1 with Course
-    entries = db.relationship("QueueEntry", backref = "queue", lazy = "dynamic") # 1:Many with Entries, Dynamic Loading
+    entries = db.relationship("QueueEntry", back_populates = "queue", lazy = "dynamic") # 1:Many with Entries, Dynamic Loading
 
 class QueueEntry(db.Model):
     __tablename__ = "queue_entry"
@@ -107,7 +107,7 @@ class QueueEntry(db.Model):
     ula_net_id = db.Column(db.String, db.ForeignKey("person.net_id"), nullable = True)  # ULA assigned to help, can be null when pending
 
     # Queue Position (determined dynamically)
-    position = db.Column(db.Integer, nullable = False)
+    position = db.Column(db.Integer, nullable = True)
 
     # Required Topic Name
     topic_name = db.Column(db.String, nullable = False)  # Description of the problem
@@ -128,9 +128,9 @@ class QueueEntry(db.Model):
     time_finished = db.Column(db.DateTime, nullable = True)  # When ULA finished helping
 
     # Relationships (Eager Loading for performance)
-    person = db.relationship("Person", foreign_keys = [net_id], backref = "queue_entries", lazy = "dynamic")
-    ula = db.relationship("Person", foreign_keys = [ula_net_id], backref = "assigned_queue_tasks", lazy = "dynamic")
-    queue = db.relationship("Queue", backref = "entries")
+    person = db.relationship("Person", foreign_keys = [net_id], backref = "queue_entries", lazy = "joined")
+    ula = db.relationship("Person", foreign_keys = [ula_net_id], backref = "assigned_queue_tasks", lazy = "joined")
+    queue = db.relationship("Queue", back_populates = "entries")
 
     # Unique Constraint: Prevent multiple active entries by only allowing one "Pending" or "In Progress" entry at a time
     __table_args__ = (
