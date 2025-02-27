@@ -124,13 +124,40 @@ def test_complete_queue_entry():
     assert "marked as completed" in response.json().get("message", "")
 
 def test_update_topic_name():
-    """Test updating the topic name of a queue entry"""
-    queue_entries = requests.get(f"{BASE_URL}/queue/course/{test_queue['course_id']}/person/{test_queue_entry['net_id']}").json()
-    queue_entry_id = queue_entries[0]["queue_entry_id"]
+    """Test updating the topic name of a queue entry that is not completed."""
+    # Retrieve the student's queue entries for the course.
+    queue_entries = requests.get(
+        f"{BASE_URL}/queue/course/{test_queue['course_id']}/person/{test_queue_entry['net_id']}"
+    ).json()
     
-    response = requests.patch(f"{BASE_URL}/queue/entry/{queue_entry_id}/topic", json={"topic_name": "Updated topic"})
-    assert response.status_code == 200
+    # Look for an entry that is not completed.
+    entry_to_update = None
+    for entry in queue_entries:
+        if entry.get("status") in ["Pending", "In Progress"]:
+            entry_to_update = entry
+            break
+    
+    # If no modifiable entry is found, create a new one.
+    if not entry_to_update:
+        new_entry_data = {
+            "net_id": test_queue_entry["net_id"],
+            "topic_name": "Need help with recursion (for topic update)"
+        }
+        add_response = requests.post(
+            f"{BASE_URL}/queue/course/{test_queue['course_id']}/add", json=new_entry_data
+        )
+        assert add_response.status_code == 201, f"Failed to add new queue entry: {add_response.json()}"
+        entry_to_update = {"queue_entry_id": add_response.json()["queue_entry_id"]}
+    
+    queue_entry_id = entry_to_update["queue_entry_id"]
+
+    # Now attempt to update the topic name on a modifiable entry.
+    response = requests.patch(
+        f"{BASE_URL}/queue/entry/{queue_entry_id}/topic", json={"topic_name": "Updated topic"}
+    )
+    assert response.status_code == 200, f"Expected status 200, got {response.status_code} with {response.json()}"
     assert "Topic name updated" in response.json().get("message", "")
+
 
 def test_delete_queue_entry():
     """Test deleting a queue entry"""

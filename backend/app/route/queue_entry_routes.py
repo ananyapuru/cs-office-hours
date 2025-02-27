@@ -127,7 +127,7 @@ def complete_queue_entry(queue_entry_id):
 
     adjust_queue_positions(queue_entry.queue_id)
 
-    return jsonify({"message": f"Queue entry {queue_entry_id} is now Completed"}), 200
+    return jsonify({"message": f"Queue entry {queue_entry_id} marked as completed"}), 200
 
 # PATCH: Assign a ULA to a queue entry and set to in progress
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/assign", methods=["PATCH"])
