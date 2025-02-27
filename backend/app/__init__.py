@@ -4,21 +4,20 @@ from flask import Flask
 from flask_cors import CORS
 from flask_cas import CAS 
 from dotenv import load_dotenv
-from .routes import main_bp
-
 from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()  # Loading our environment variables from .env file
 db = SQLAlchemy()
 
 # Delay imports of routes until after db is initialized
-from .route.person_routes import person_bp
-from .route.course_routes import course_bp
-from .route.student_routes import student_bp
-from .route.ula_routes import ula_bp
-from .route.admin_routes import admin_bp
-from .route.queue_routes import queue_bp
-from .route.queue_entry_routes import queue_entry_bp
+from .routes.login_routes import login_bp
+from .routes.person_routes import person_bp
+from .routes.course_routes import course_bp
+from .routes.student_routes import student_bp
+from .routes.ula_routes import ula_bp
+from .routes.admin_routes import admin_bp
+from .routes.queue_routes import queue_bp
+from .routes.queue_entry_routes import queue_entry_bp
 
 def create_app():
     app = Flask(__name__)
@@ -32,7 +31,7 @@ def create_app():
 
 
     app.config['CAS_SERVER'] = 'https://secure.its.yale.edu/cas'
-    app.config['CAS_AFTER_LOGIN'] = 'main.after_login'
+    app.config['CAS_AFTER_LOGIN'] = 'login.after_login'
     
     # Explicitly set ourr CAS login route so that it appends "/login/" otherwise we get incorrect URL
     app.config['CAS_LOGIN_ROUTE'] = '/cas/login'
@@ -58,7 +57,7 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_NOTIFICATIONS"] = False
     db.init_app(app)
 
-    app.register_blueprint(main_bp)
+    app.register_blueprint(login_bp)
     app.register_blueprint(person_bp)
     app.register_blueprint(course_bp)
     app.register_blueprint(student_bp)
@@ -66,5 +65,5 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(queue_bp)
     app.register_blueprint(queue_entry_bp)
-    
+
     return app
