@@ -14,8 +14,8 @@ def get_all_queue_entries_for_course(course_id):
         return jsonify({"error": f"Queue for course {course_id} not found"}), 404
 
     queue_entries = QueueEntry.query.filter_by(queue_id=queue.queue_id).order_by(QueueEntry.position).all()
-    if not queue_entries:
-        return jsonify({"error": f"No queue entries found for course {course_id}"}), 404
+    # if not queue_entries:
+    #     return jsonify({"error": f"No queue entries found for course {course_id}"}), 404
 
     return jsonify([
         {
@@ -42,8 +42,8 @@ def get_queue_by_student_in_course(course_id, net_id):
         return jsonify({"error": f"Queue for course {course_id} not found"}), 404
 
     queue_entries = QueueEntry.query.filter_by(queue_id=queue.queue_id, net_id=net_id).all()
-    if not queue_entries:
-        return jsonify({"error": f"No queue entries found for student {net_id} in course {course_id}"}), 404
+    # if not queue_entries:
+    #     return jsonify({"error": f"No queue entries found for student {net_id} in course {course_id}"}), 404
     
     return jsonify([
         {
