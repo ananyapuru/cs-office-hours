@@ -1,4 +1,9 @@
 # backend/app/__init__.py
+import builtins
+
+if not hasattr(builtins, 'basestring'):
+    builtins.basestring = str
+
 import os
 from flask import Flask
 from flask_cors import CORS
