@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: jz
+      POSTGRES_PASSWORD: cs490
+      POSTGRES_DB: cs_office_hours
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  web:
+    build: .
+    ports:
+      - "5002:5002"
+    environment:
+      DATABASE_URL: "postgresql://jz:cs490@db:5432/cs_office_hours"
+      FLASK_SECRET_KEY: "jwNn1qboghipr7NtvwMLkz42ILKj8aN0"
+      FRONTEND_URL: "http://localhost:3000"
+      BASE_URL: "http://web:5002"
+    depends_on:
+      - db
+      
+volumes:
+  pgdata:

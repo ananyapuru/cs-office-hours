@@ -57,6 +57,10 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_NOTIFICATIONS"] = False
     db.init_app(app)
 
+    # Create the Tables if they don't already exist
+    with app.app_context():
+        db.create_all()
+
     app.register_blueprint(login_bp)
     app.register_blueprint(person_bp)
     app.register_blueprint(course_bp)
