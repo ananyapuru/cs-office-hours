@@ -17,6 +17,8 @@ services:
     environment:
       DATABASE_URL: "postgresql://jz:cs490@db:5432/cs_office_hours"
       FLASK_SECRET_KEY: "jwNn1qboghipr7NtvwMLkz42ILKj8aN0"
+      YALIES_API_KEY: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NDAyNzM0MDIsInN1YiI6ImFwMjYyNiJ9.hD8ssO6AUFHwfCdAi3ZLOUwVTCcxqMM16ev7kSOgnbI
+      YALIES_API_URL: "https://yalies.io/api/people"
       FRONTEND_URL: "http://localhost:3000"
       BASE_URL: "http://web:5002"
     depends_on:

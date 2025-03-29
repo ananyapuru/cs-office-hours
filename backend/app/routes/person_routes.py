@@ -156,3 +156,5 @@ def delete_person(net_id):
     db.session.delete(person)
     db.session.commit()
     return jsonify({"message": f"Person with NetID: {net_id} was deleted successfully"}), 200
+
+# Yalies API call to populate Persons model is in utils.py

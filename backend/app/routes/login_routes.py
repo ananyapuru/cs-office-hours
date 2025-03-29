@@ -1,7 +1,9 @@
 # backend/app/routes.py
+import os
 from flask import Blueprint, session, jsonify, redirect, current_app
 from flask_cas import logout as cas_logout
-from ..utils import get_welcome_message
+from ..utils import get_welcome_message, fetch_from_yalies
+from app.models import Person, db
 
 login_bp = Blueprint('login', __name__)
 
@@ -12,10 +14,52 @@ def index():
 @login_bp.route('/check')
 def check():
     username = session.get('CAS_USERNAME')
-    if username:
-        return jsonify({'auth': True, 'user': {'netId': username}})
-    return jsonify({'auth': False})
+    if not username:
+        return jsonify({'auth': False})
 
+    # Try fetching from Person table
+    person = Person.query.filter_by(net_id=username).first()
+    if person:
+        return jsonify({'auth': True, 'user': {
+            'netId': username,
+            'firstName': person.first_name,
+            'lastName': person.last_name
+        }})
+
+    # If not found, fetch from Yalies
+    yalies_data = fetch_from_yalies(username)
+    
+    if yalies_data:
+        try:
+            first_name = yalies_data.get("first_name", "")
+            last_name = yalies_data.get("last_name", "")
+            email = yalies_data.get("email", f"{first_name.lower()}.{last_name.lower()}@yale.edu")
+            class_year = yalies_data.get("year", 0)
+            residential_college = yalies_data.get("college", None)
+            
+            person = Person(
+                net_id=username,
+                first_name=first_name,
+                last_name=last_name,
+                yale_email=email,
+                class_year=class_year,
+                residential_college=residential_college
+            )
+            db.session.add(person)
+            db.session.commit()
+
+            return jsonify({'auth': True, 'user': {
+                'netId': username,
+                'firstName': person.first_name,
+                'lastName': person.last_name
+            }})
+        except Exception as e:
+            db.session.rollback()
+            logging.exception("Error creating person from Yalies API")
+            return jsonify({'auth': True, 'user': {'netId': username}, 'error': str(e)})
+
+    # If Yalies call fails, fallback to just netid
+    return jsonify({'auth': True, 'user': {'netId': username}})
 
 @login_bp.route('/after_login')
 def after_login():
