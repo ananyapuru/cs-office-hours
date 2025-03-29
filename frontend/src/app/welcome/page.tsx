@@ -80,22 +80,45 @@ const WelcomePage: React.FC = () => {
   if (loading) return <p>Loading...</p>;
   if (!user) return <p>You are not logged in.</p>;
 
-  return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <h1>
-        Hello {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.netId}, nice to meet you!
-      </h1>
-      <SignOutButton />
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c] text-white px-4">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-center">
+          Hello {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.netId}, nice to meet you!
+        </h1>
 
-      <div style={{ marginTop: '1rem' }}>
-      {roles.isStudent && <button>Student</button>}
-      {roles.isULA && <button>Teaching Staff</button>}
-      {roles.isAdmin && <button>Instructor</button>}
-      {roles.isSuperuser && <button>Superuser</button>}
-    </div>
+        <div className="flex flex-wrap gap-4 mt-4 justify-center">
+          <button
+            className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
+            disabled={!roles.isStudent}
+          >
+            Student
+          </button>
+          <button
+            className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
+            disabled={!roles.isULA}
+          >
+            Teaching Staff
+          </button>
+          <button
+            className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
+            disabled={!roles.isAdmin}
+          >
+            Instructor
+          </button>
+          <button
+            className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
+            disabled={!roles.isSuperuser}
+          >
+            Superuser
+          </button>
+        </div>
 
-    </div>
-  );
-};
+        <div className="mt-10">
+          <SignOutButton />
+        </div>
+      </div>
+    );
+  };
+
 
 export default WelcomePage;
