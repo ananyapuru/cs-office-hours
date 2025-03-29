@@ -9,6 +9,8 @@ import { API_ENDPOINTS } from '../constants';
 
 interface User {
   netId: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 const WelcomePage: React.FC = () => {
@@ -47,7 +49,9 @@ const WelcomePage: React.FC = () => {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Hello {user.netId}, nice to meet you!</h1>
+      <h1>
+        Hello {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.netId}, nice to meet you!
+      </h1>
       <SignOutButton />
     </div>
   );
