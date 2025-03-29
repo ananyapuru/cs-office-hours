@@ -1,6 +1,8 @@
-from flask import Blueprint, request, jsonify
-from app.models import db, Person
+import os
 import re
+from flask import Blueprint, request, jsonify, current_app
+from app.models import db, Person, Student, ULA, Admin
+
 
 # Create a Blueprint for the Person routes
 person_bp = Blueprint("person", __name__)
@@ -156,5 +158,25 @@ def delete_person(net_id):
     db.session.delete(person)
     db.session.commit()
     return jsonify({"message": f"Person with NetID: {net_id} was deleted successfully"}), 200
+
+# GET: All the roles associated with a person
+@person_bp.route("/person/<net_id>/roles", methods=["GET"])
+def get_roles(net_id):
+    # Check all our DB for roles
+    is_student = db.session.query(Student).filter_by(net_id=net_id).first() is not None
+    is_ula = db.session.query(ULA).filter_by(net_id=net_id).first() is not None
+    is_admin = db.session.query(Admin).filter_by(net_id=net_id).first() is not None
+
+    # Check superusers list from env var
+    superuser_netids = os.getenv("SUPERUSER_NETIDS", "")
+    superuser_list = [x.strip() for x in superuser_netids.split(",") if x.strip()]
+    is_superuser = net_id in superuser_list
+
+    return jsonify({
+        "isStudent": is_student,
+        "isULA": is_ula,
+        "isAdmin": is_admin,
+        "isSuperuser": is_superuser
+    }), 200
 
 # Yalies API call to populate Persons model is in utils.py
