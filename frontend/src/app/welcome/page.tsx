@@ -85,7 +85,7 @@ const WelcomePage: React.FC = () => {
         </button>
         <button
           className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
-          disabled={!roles.isULA}
+          disabled={!roles.isULA && !roles.isAdmin}
         >
           Teaching Staff
         </button>
