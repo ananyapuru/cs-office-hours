@@ -9,10 +9,12 @@ from flask import Flask
 from flask_cors import CORS
 from flask_cas import CAS 
 from dotenv import load_dotenv
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()  # Loading our environment variables from .env file
 db = SQLAlchemy()
+migrate = Migrate()
 
 # Delay imports of routes until after db is initialized
 from .routes.login_routes import login_bp
@@ -61,6 +63,7 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
     app.config["SQLALCHEMY_TRACK_NOTIFICATIONS"] = False
     db.init_app(app)
+    migrate.init_app(app, db)
 
     # Create the Tables if they don't already exist
     with app.app_context():

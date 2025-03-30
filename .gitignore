@@ -5,3 +5,4 @@ frontend/.next
 # Python (backend)
 backend/venv
 backend/__pycache__
+*.pyc
