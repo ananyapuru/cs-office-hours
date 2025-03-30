@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, Student, Person, Course
+from app.utils import fetch_from_yalies
 
 # Create a Blueprint for the Student routes
 student_bp = Blueprint("student", __name__)
@@ -178,3 +179,55 @@ def clear_student_feedback(net_id, course_id):
     student.feedback = []  # Reset feedback to an empty list
     db.session.commit()
     return jsonify({"message": f"All feedback cleared for student {net_id} in course {course_id}"}), 200
+
+
+@student_bp.route("/enroll-via-yalies", methods=["POST"])
+def enroll_student_via_yalies():
+    data = request.json
+    net_id = data.get("net_id", "").strip()
+    course_id = data.get("course_id", "").strip()
+
+    if not net_id or not course_id:
+        return jsonify({"error": "net_id and course_id are required"}), 400
+
+    # Ensure course exists
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({"error": f"Course {course_id} does not exist"}), 404
+
+    # Check if Person exists
+    person = Person.query.get(net_id)
+    if not person:
+        yalies_data = fetch_from_yalies(net_id)
+        if not yalies_data:
+            return jsonify({"error": f"Person with NetID {net_id} not found via Yalies API"}), 404
+
+        try:
+            person = Person(
+                net_id = net_id,
+                first_name = yalies_data.get("first_name", ""),
+                last_name = yalies_data.get("last_name", ""),
+                yale_email = yalies_data.get("email", f"{net_id}@yale.edu"),
+                class_year = yalies_data.get("year", 0),
+                residential_college = yalies_data.get("college", None)
+            )
+            db.session.add(person)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": f"Failed to create Person: {str(e)}"}), 500
+
+    # Check if Student already exists
+    existing_student = Student.query.get((net_id, course_id))
+    if existing_student:
+        return jsonify({"error": f"Student {net_id} already enrolled in {course_id}"}), 409
+
+    # Enroll Student
+    new_student = Student(net_id=net_id, course_id=course_id, feedback=[])
+    try:
+        db.session.add(new_student)
+        db.session.commit()
+        return jsonify({"message": f"Student {net_id} enrolled in {course_id} successfully."}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

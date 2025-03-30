@@ -21,6 +21,7 @@ services:
       YALIES_API_URL: "https://yalies.io/api/people"
       FRONTEND_URL: "http://localhost:3000"
       BASE_URL: "http://web:5002"
+      SUPERUSER_NETIDS: "ap2626,jz159"
     depends_on:
       - db
       
