@@ -136,6 +136,14 @@ const InstructorPage: React.FC = () => {
           </table>
         </div>
       )}
+    <div className="text-center mt-10">
+      <button
+        onClick={() => router.push('/welcome')}
+        className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
+      >
+        Back to Welcome Page
+      </button>
+    </div>
     </div>
   );
 };
