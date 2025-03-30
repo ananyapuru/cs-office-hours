@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 import SignOutButton from '../components/SignOutButton';
 import { API_ENDPOINTS } from '../constants';
 
@@ -28,8 +28,43 @@ const WelcomePage: React.FC = () => {
     isSuperuser: false,
   });
   const [loading, setLoading] = useState(true);
-  const router = useRouter(); 
+  const [greetingIndex, setGreetingIndex] = useState(0);
+  const [typedGreeting, setTypedGreeting] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
+  const greetings = ['Hello', 'Bonjour', 'Hola', 'Ciao', 'नमस्ते', 'こんにちは', '안녕하세요', 'مرحبا', 'Hej', 'Salut'];
+
+  // Typewriter effect
+  useEffect(() => {
+    let typingTimeout: NodeJS.Timeout;
+    const currentGreeting = greetings[greetingIndex];
+
+    if (isDeleting) {
+      typingTimeout = setTimeout(() => {
+        setTypedGreeting((prev) => prev.slice(0, -1));
+      }, 50);
+    } else {
+      typingTimeout = setTimeout(() => {
+        setTypedGreeting((prev) => currentGreeting.slice(0, prev.length + 1));
+      }, 100);
+    }
+
+    // When finished typing
+    if (!isDeleting && typedGreeting === currentGreeting) {
+      setTimeout(() => setIsDeleting(true), 2000); // pause before deleting
+    }
+
+    // When finished deleting
+    if (isDeleting && typedGreeting === '') {
+      setIsDeleting(false);
+      setGreetingIndex((prev) => (prev + 1) % greetings.length);
+    }
+
+    return () => clearTimeout(typingTimeout);
+  }, [typedGreeting, isDeleting, greetingIndex]);
+
+  // Fetch user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -50,6 +85,7 @@ const WelcomePage: React.FC = () => {
     fetchUser();
   }, []);
 
+  // Fetch roles
   useEffect(() => {
     if (!user) return;
     const fetchRoles = async () => {
@@ -70,11 +106,21 @@ const WelcomePage: React.FC = () => {
   if (loading) return <p>Loading...</p>;
   if (!user) return <p>You are not logged in.</p>;
 
+  const nameDisplay = user.firstName || user.netId;
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c] text-white px-4">
-      <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-center">
-        Hello {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.netId}, nice to meet you!
+      <h1
+        className="text-4xl sm:text-5xl md:text-6xl mb-6 text-center font-light"
+        style={{ fontFamily: 'Avenir, sans-serif' }}
+      >
+        <span className="font-bold text-yellow-300 whitespace-nowrap">
+          {typedGreeting}
+          <span className="blinking-cursor"></span>
+        </span>{' '}
+        {nameDisplay}, nice to meet you!
       </h1>
+
 
       <div className="flex flex-wrap gap-4 mt-4 justify-center">
         <button
