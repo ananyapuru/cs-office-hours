@@ -109,7 +109,10 @@ const WelcomePage: React.FC = () => {
   const nameDisplay = user.firstName || user.netId;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c] text-white px-4">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c] text-white px-4">
+      <div className="absolute top-6 right-10">
+        <SignOutButton />
+      </div>
       <h1
         className="text-4xl sm:text-5xl md:text-6xl mb-6 text-center font-light"
         style={{ fontFamily: 'Avenir, sans-serif' }}
@@ -120,8 +123,8 @@ const WelcomePage: React.FC = () => {
         </span>{' '}
         {nameDisplay}, nice to meet you!
       </h1>
-
-
+  
+      {/* Role Buttons */}
       <div className="flex flex-wrap gap-4 mt-4 justify-center">
         <button
           className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
@@ -138,6 +141,7 @@ const WelcomePage: React.FC = () => {
         <button
           className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
           disabled={!roles.isAdmin}
+          onClick={() => router.push('/instructor')}
         >
           Instructor
         </button>
@@ -149,12 +153,9 @@ const WelcomePage: React.FC = () => {
           Superuser
         </button>
       </div>
-
-      <div className="mt-10">
-        <SignOutButton />
-      </div>
     </div>
   );
+  
 };
 
 export default WelcomePage;

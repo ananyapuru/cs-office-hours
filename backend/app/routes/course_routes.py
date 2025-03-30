@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, Course
+from app.models import db, Course, Person, Student
 
 course_bp = Blueprint("course", __name__)
 
@@ -99,3 +99,27 @@ def delete_course(course_id):
     db.session.delete(course)
     db.session.commit()
     return jsonify({"message": f"Course {course_id} was deleted successfully"}), 200
+
+
+@course_bp.route("/course/<course_id>/students", methods=["GET"])
+def get_students_for_course(course_id):
+    students = Student.query.filter_by(course_id=course_id).all()
+    if not students:
+        return jsonify([]), 200  # Return empty list if no students yet!
+
+    enriched = []
+    for s in students:
+        person = Person.query.get(s.net_id)
+        enriched.append({
+            "net_id": s.net_id,
+            "course_id": s.course_id,
+            "feedback": s.feedback,
+            "first_name": person.first_name if person else "",
+            "last_name": person.last_name if person else "",
+            "yale_email": person.yale_email if person else "",
+            "college": person.residential_college if person else "",
+            "class_year": person.class_year if person else "",
+            "role": "Student"
+        })
+
+    return jsonify(enriched), 200

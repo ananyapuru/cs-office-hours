@@ -18,8 +18,8 @@ const SignOutButton: React.FC = () => {
         padding: '0.75rem 2rem',
         borderRadius: '0.75rem',
         textTransform: 'none',
-        fontSize: '1rem',
-        fontWeight: 600,
+        fontSize: '0.85rem',
+        fontWeight: 500,
       }}
     >
       Sign Out
