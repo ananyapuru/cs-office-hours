@@ -123,6 +123,7 @@ const ManageAdminPage: React.FC = () => {
               <tr>
                 <th className="px-6 py-3">Net ID</th>
                 <th className="px-6 py-3">Course ID</th>
+                <th className="px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -133,6 +134,25 @@ const ManageAdminPage: React.FC = () => {
                 >
                   <td className="px-6 py-3">{admin.net_id}</td>
                   <td className="px-6 py-3">{admin.course_id}</td>
+                  <td className="px-6 py-3">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await axios.delete(
+                            `${API_ENDPOINTS.BACKEND_URL}/admin/${admin.net_id}/${admin.course_id}`,
+                            { withCredentials: true }
+                          );
+                          fetchAdmins();
+                        } catch (err: any) {
+                          console.error('Delete failed:', err);
+                          alert(err.response?.data?.error || 'Failed to delete admin.');
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
