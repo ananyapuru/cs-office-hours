@@ -1,4 +1,3 @@
-// frontend/src/app/components/SignOutButton.tsx
 'use client';
 
 import React from 'react';
@@ -7,12 +6,22 @@ import { API_ENDPOINTS } from '../constants';
 
 const SignOutButton: React.FC = () => {
   const handleSignOut = () => {
-    // Full page redirect to the custom /logout route
     window.location.href = `${API_ENDPOINTS.BACKEND_URL}/logout`;
   };
 
   return (
-    <Button variant="contained" color="error" onClick={handleSignOut}>
+    <Button
+      variant="contained"
+      color="error"
+      onClick={handleSignOut}
+      style={{
+        padding: '0.75rem 2rem',
+        borderRadius: '0.75rem',
+        textTransform: 'none',
+        fontSize: '1rem',
+        fontWeight: 600,
+      }}
+    >
       Sign Out
     </Button>
   );
