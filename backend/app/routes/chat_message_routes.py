@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, Chat, ChatMessage, Person
+from app.models import Course, Student, db, Chat, ChatMessage, Person
 
 # Create a Blueprint for the ChatMessage routes
 chatmessage_bp = Blueprint("chatmessage", __name__)
@@ -7,14 +7,15 @@ chatmessage_bp = Blueprint("chatmessage", __name__)
 # GET: Fetch all chat messages for a specific course (ordered by timestamp)
 @chatmessage_bp.route("/chat/course/<course_id>/messages", methods=["GET"])
 def get_chat_messages(course_id):
-
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({"error": f"Course {course_id} does not exist"}), 404
+    
     chat = Chat.query.filter_by(course_id=course_id).first()
     if not chat:
         return jsonify({"error": f"Chat for course {course_id} not found"}), 404
 
     messages = ChatMessage.query.filter_by(chat_id=chat.chat_id).order_by(ChatMessage.time_sent).all()
-    # if not messages:
-    #     return jsonify({"error": f"No chat messages found for course {course_id}"}), 404
 
     return jsonify([
         {
@@ -29,13 +30,24 @@ def get_chat_messages(course_id):
 # GET: Fetch all chat messages for a specific course by sender (ordered by timestamp)
 @chatmessage_bp.route("/chat/course/<course_id>/person/<net_id>/messages", methods=["GET"])
 def get_course_messages_by_person(course_id, net_id):
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({"error": f"Course {course_id} does not exist"}), 404
+    
     chat = Chat.query.filter_by(course_id=course_id).first()
     if not chat:
         return jsonify({"error": f"Chat for course {course_id} not found"}), 404
 
+    person = Person.query.get(net_id)
+    if not person:
+        return jsonify({"error": f"Student {net_id} not found"}), 404
+
+    # Verify that the student is enrolled in the course.
+    enrollment = Student.query.filter_by(net_id=net_id, course_id=course_id).first()
+    if not enrollment:
+        return jsonify({"error": f"Student {net_id} is not enrolled in course {course_id}"}), 404
+    
     messages = ChatMessage.query.filter_by(chat_id=chat.chat_id, net_id=net_id).order_by(ChatMessage.time_sent).all()
-    # if not messages:
-    #     return jsonify({"error": f"No messages found for person {net_id} in course {course_id}"}), 404
 
     return jsonify([
         {
@@ -51,6 +63,9 @@ def get_course_messages_by_person(course_id, net_id):
 # POST: Add a chat message to a course's chat
 @chatmessage_bp.route("/chat/course/<course_id>/message/add", methods=["POST"])
 def add_chat_message(course_id):
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({"error": f"Course {course_id} does not exist"}), 404
     chat = Chat.query.filter_by(course_id=course_id).first()
     if not chat:
         return jsonify({"error": f"Chat for course {course_id} not found"}), 404
@@ -84,6 +99,9 @@ def add_chat_message(course_id):
 # DELETE: Clear all chat messages for a course (Admin use)
 @chatmessage_bp.route("/chat/course/<course_id>/clear", methods=["DELETE"])
 def clear_chat_messages(course_id):
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({"error": f"Course {course_id} does not exist"}), 404
     chat = Chat.query.filter_by(course_id=course_id).first()
     if not chat:
         return jsonify({"error": f"Chat for course {course_id} not found"}), 404

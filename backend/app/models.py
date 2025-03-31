@@ -285,6 +285,13 @@ class QueueEntry(db.Model):
         server_default="Pending"
     )
 
+    # Mode Enum: Virtual or In-Person Queue Entry
+    mode = db.Column(
+        ENUM("in-person", "virtual", name = "office_hours_mode_enum"),
+        nullable = False, 
+        server_default="in-person"
+    )
+
     # Timing Metrics
     time_entered = db.Column(db.DateTime, nullable=False, server_default=func.now())  # When student joined queue
     time_started = db.Column(db.DateTime, nullable=True)  # When ULA started helping

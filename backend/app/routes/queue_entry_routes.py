@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, Queue, Person, ULA, QueueEntry
+from app.models import Student, db, Queue, Person, ULA, QueueEntry
 from sqlalchemy.sql import func
 
 # Create a Blueprint for the Queue routes
@@ -9,13 +9,15 @@ queue_entry_bp = Blueprint("queue_entry", __name__)
 @queue_entry_bp.route("/queue/course/<course_id>/entries", methods=["GET"])
 def get_all_queue_entries_for_course(course_id):
     """Fetches all queue entries for a course."""
+    mode = request.args.get("mode")  # optional query parameter
     queue = Queue.query.filter_by(course_id=course_id).first()
     if not queue:
         return jsonify({"error": f"Queue for course {course_id} not found"}), 404
 
-    queue_entries = QueueEntry.query.filter_by(queue_id=queue.queue_id).order_by(QueueEntry.position).all()
-    # if not queue_entries:
-    #     return jsonify({"error": f"No queue entries found for course {course_id}"}), 404
+    query = QueueEntry.query.filter_by(queue_id=queue.queue_id)
+    if mode:
+        query = query.filter_by(mode=mode)
+    queue_entries = query.order_by(QueueEntry.position).all()
 
     return jsonify([
         {
@@ -27,6 +29,7 @@ def get_all_queue_entries_for_course(course_id):
             "topic_name": q.topic_name,
             "zoom_link": q.zoom_link,
             "status": q.status,
+            "mode": q.mode,
             "time_entered": q.time_entered,
             "time_started": q.time_started,
             "time_finished": q.time_finished
@@ -37,13 +40,23 @@ def get_all_queue_entries_for_course(course_id):
 # GET: Fetch queue entries for a student in a specific course
 @queue_entry_bp.route("/queue/course/<course_id>/person/<net_id>", methods=["GET"])
 def get_queue_by_student_in_course(course_id, net_id):
+    # Verify that the person exists
+    person = Person.query.get(net_id)
+    if not person:
+        return jsonify({"error": f"Student {net_id} not found"}), 404
+
+    # Verify that the student is enrolled in the course.
+    enrollment = Student.query.filter_by(net_id=net_id, course_id=course_id).first()
+    if not enrollment:
+        return jsonify({"error": f"Student {net_id} is not enrolled in course {course_id}"}), 404
+
+    # Verify that the queue exists for the course.
     queue = Queue.query.filter_by(course_id=course_id).first()
     if not queue:
         return jsonify({"error": f"Queue for course {course_id} not found"}), 404
 
+    # Retrieve queue entries for the student.
     queue_entries = QueueEntry.query.filter_by(queue_id=queue.queue_id, net_id=net_id).all()
-    # if not queue_entries:
-    #     return jsonify({"error": f"No queue entries found for student {net_id} in course {course_id}"}), 404
     
     return jsonify([
         {
@@ -55,10 +68,14 @@ def get_queue_by_student_in_course(course_id, net_id):
             "topic_name": q.topic_name,
             "zoom_link": q.zoom_link,
             "status": q.status,
+            "mode": q.mode,
             "time_entered": q.time_entered,
             "time_started": q.time_started,
             "time_finished": q.time_finished
-    } for q in queue_entries]), 200
+        } for q in queue_entries
+    ]), 200
+
+
 
 # POST: Add a student to the queue
 @queue_entry_bp.route("/queue/course/<course_id>/add", methods=["POST"])
@@ -97,6 +114,7 @@ def add_to_queue(course_id):
         topic_name = data["topic_name"].strip(),
         zoom_link = data.get("zoom_link", "").strip() or None,
         status = "Pending",
+        mode = data.get("mode", "in-person").strip(),
         time_entered = func.now(),
         time_started = None,
         time_finished = None
