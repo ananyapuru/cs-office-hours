@@ -80,8 +80,8 @@ class Course(db.Model):
     # Columns
     academic_year = db.Column(db.String, nullable=False)
     academic_term = db.Column(db.String, nullable=False)
-    enrollment_size = db.Column(db.Integer, nullable=False)
-    course_staff_size = db.Column(db.Integer, nullable=False)
+    enrollment_size = db.Column(db.Integer, nullable=True)
+    course_staff_size = db.Column(db.Integer, nullable=True)
 
     # Relations (Students, ULAs, Admins have a Many:1 relationship with Course table, many students all map to the same course)
     students = db.relationship(

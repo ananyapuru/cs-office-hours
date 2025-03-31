@@ -19,3 +19,37 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+@layer utilities {
+  @keyframes fade-in-out {
+    0%, 100% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-out {
+    animation: fade-in-out 4.5s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  .blinking-cursor::after {
+    content: '|';
+    display: inline-block;
+    animation: blink 1s step-start infinite;
+    color: inherit;
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+}
+

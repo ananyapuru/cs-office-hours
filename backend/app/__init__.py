@@ -1,23 +1,31 @@
 # backend/app/__init__.py
+import builtins
+
+if not hasattr(builtins, 'basestring'):
+    builtins.basestring = str
+
 import os
 from flask import Flask
 from flask_cors import CORS
 from flask_cas import CAS 
 from dotenv import load_dotenv
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()  # Loading our environment variables from .env file
 db = SQLAlchemy()
+migrate = Migrate()
 
 # Delay imports of routes until after db is initialized
+from .routes.admin_routes import admin_bp
+from .routes.course_routes import course_bp
+from .routes.course_roster_routes import course_roster_bp
 from .routes.login_routes import login_bp
 from .routes.person_routes import person_bp
-from .routes.course_routes import course_bp
-from .routes.student_routes import student_bp
-from .routes.ula_routes import ula_bp
-from .routes.admin_routes import admin_bp
 from .routes.queue_routes import queue_bp
 from .routes.queue_entry_routes import queue_entry_bp
+from .routes.student_routes import student_bp
+from .routes.ula_routes import ula_bp
 
 def create_app():
     app = Flask(__name__)
@@ -56,6 +64,7 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
     app.config["SQLALCHEMY_TRACK_NOTIFICATIONS"] = False
     db.init_app(app)
+    migrate.init_app(app, db)
 
     # Create the Tables if they don't already exist
     with app.app_context():
@@ -69,5 +78,6 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(queue_bp)
     app.register_blueprint(queue_entry_bp)
+    app.register_blueprint(course_roster_bp)
 
     return app
