@@ -147,7 +147,7 @@ const WelcomePage: React.FC = () => {
         </button>
         <button
           onClick={() => router.push('/superuser')}
-          className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
+          className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
           disabled={!roles.isSuperuser}
         >
           Superuser
