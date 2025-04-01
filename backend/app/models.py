@@ -269,9 +269,6 @@ class QueueEntry(db.Model):
         nullable=True
     )  # ULA assigned to help, can be null when pending
 
-    # Queue Position (determined dynamically)
-    position = db.Column(db.Integer, nullable=True)
-
     # Required Topic Name
     topic_name = db.Column(db.String, nullable=False)  # Description of the problem
 
@@ -324,15 +321,6 @@ class QueueEntry(db.Model):
         ),
     )
 
-    @staticmethod
-    def get_next_position(queue_id):
-        """Returns the next available position in the queue for a given course, excluding completed entries."""
-        last_position = (
-            db.session.query(db.func.max(QueueEntry.position))
-            .filter(QueueEntry.queue_id == queue_id, QueueEntry.status.in_(["Pending", "In Progress"]))
-            .scalar()
-        )
-        return (last_position or 0) + 1  # If no active entries, start from 1
 
 ##########################################
 #               Chat                  #

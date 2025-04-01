@@ -17,7 +17,7 @@ def get_all_queue_entries_for_course(course_id):
     query = QueueEntry.query.filter_by(queue_id=queue.queue_id)
     if mode:
         query = query.filter_by(mode=mode)
-    queue_entries = query.order_by(QueueEntry.position).all()
+    queue_entries = query.order_by(QueueEntry.time_entered).all()
 
     return jsonify([
         {
@@ -25,7 +25,6 @@ def get_all_queue_entries_for_course(course_id):
             "queue_id": q.queue_id,
             "net_id": q.net_id,
             "ula_net_id": q.ula_net_id,
-            "position": q.position,
             "topic_name": q.topic_name,
             "zoom_link": q.zoom_link,
             "status": q.status,
@@ -64,7 +63,6 @@ def get_queue_by_student_in_course(course_id, net_id):
             "queue_id": q.queue_id,
             "net_id": q.net_id,
             "ula_net_id": q.ula_net_id,
-            "position": q.position,
             "topic_name": q.topic_name,
             "zoom_link": q.zoom_link,
             "status": q.status,
@@ -104,13 +102,11 @@ def add_to_queue(course_id):
     if existing_entry:
         return jsonify({"error": "Student already has an active queue entry"}), 409
     
-    position = QueueEntry.get_next_position(queue.queue_id)
 
     new_queue_entry = QueueEntry(
         queue_id = queue.queue_id,
         net_id = data["net_id"],
         ula_net_id = None,
-        position = position,
         topic_name = data["topic_name"].strip(),
         zoom_link = data.get("zoom_link", "").strip() or None,
         status = "Pending",
@@ -142,8 +138,6 @@ def complete_queue_entry(queue_entry_id):
     queue_entry.status = "Completed"
     queue_entry.time_finished = func.now()
     db.session.commit()
-
-    adjust_queue_positions(queue_entry.queue_id)
 
     return jsonify({"message": f"Queue entry {queue_entry_id} marked as completed"}), 200
 
@@ -257,19 +251,4 @@ def delete_queue_entry(queue_entry_id):
     db.session.delete(queue_entry)
     db.session.commit()
 
-    adjust_queue_positions(queue_id)
-
     return jsonify({"message": f"Queue entry {queue_entry_id} has been removed"}), 200
-
-# Helper function: Adjust queue positions after a deletion or completion
-def adjust_queue_positions(queue_id):
-    """Reorders queue positions after an entry is removed/completed."""
-    queue_entries = QueueEntry.query.filter(
-        QueueEntry.queue_id == queue_id,
-        QueueEntry.status.in_(["Pending", "In Progress"])
-    ).order_by(QueueEntry.time_entered).all()
-
-    for index, entry in enumerate(queue_entries, start=1):
-        entry.position = index
-
-    db.session.commit()

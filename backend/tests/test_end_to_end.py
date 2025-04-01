@@ -106,7 +106,6 @@ def test_end_to_end():
       - Assigns a ULA to each entry and marks the entry as complete.
       - Verifies that completed entries cannot be updated.
       - Ensures a student cannot have multiple active entries in the same queue.
-      - Tests deletion of a queue entry and verifies position reordering.
       - Tests that after deletion a student may re-enroll.
       - Verifies editing of fields via predefined routes.
       - Verifies Admin assignment and querying.
@@ -166,8 +165,9 @@ def test_end_to_end():
     r_update = requests.patch(f"{BASE_URL}/queue/entry/{completed_entry}/topic", json={"topic_name": "Should not update"})
     assert r_update.status_code == 400, f"Update on completed entry {completed_entry} should fail: {r_update.json()}"
     
+    
     #################################
-    # 5. Test deletion and position reordering.
+    # 6. Test re-enrollment while active and after completion.
     #################################
     # For COURSE_2, create three additional entries from person7, person9, person10.
     additional_entries = []
@@ -176,28 +176,6 @@ def test_end_to_end():
         r = requests.post(f"{BASE_URL}/queue/course/COURSE_2/add", json=data)
         assert r.status_code == 201, f"Failed to add additional entry for {student} in COURSE_2: {r.json()}"
         additional_entries.append(r.json()["queue_entry_id"])
-    
-    # Verify positions before deletion.
-    r_entries = requests.get(f"{BASE_URL}/queue/course/COURSE_2/entries")
-    entries_list = r_entries.json()
-    positions_before = [e["position"] for e in entries_list if e["status"] in ["Pending", "In Progress"]]
-    # Expect positions starting at 1 sequentially.
-    assert positions_before == list(range(1, len(positions_before) + 1)), f"Initial positions not sequential: {positions_before}"
-    
-    # Delete the middle additional entry.
-    middle_entry = additional_entries[1]
-    r_del = requests.delete(f"{BASE_URL}/queue/entry/{middle_entry}")
-    assert r_del.status_code == 200, f"Failed to delete entry {middle_entry}: {r_del.json()}"
-    
-    # Verify positions are re-ordered.
-    r_entries_after = requests.get(f"{BASE_URL}/queue/course/COURSE_2/entries")
-    entries_after = r_entries_after.json()
-    positions_after = [e["position"] for e in entries_after if e["status"] in ["Pending", "In Progress"]]
-    assert positions_after == list(range(1, len(positions_after) + 1)), f"Positions after deletion not sequential: {positions_after}"
-    
-        #################################
-    # 6. Test re-enrollment while active and after completion.
-    #################################
     # For COURSE_2, attempt re-enrollment for person7 while an active entry exists.
     r_reenroll_active = requests.post(f"{BASE_URL}/queue/course/COURSE_2/add", json={
         "net_id": "person7",
