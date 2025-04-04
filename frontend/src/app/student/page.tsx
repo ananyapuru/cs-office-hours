@@ -103,6 +103,7 @@ const StudentPage: React.FC = () => {
                 <th className="px-6 py-3">Course No.</th>
                 <th className="px-6 py-3">Academic Year</th>
                 <th className="px-6 py-3">Term</th>
+                <th className="px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -114,6 +115,14 @@ const StudentPage: React.FC = () => {
                   <td className="px-6 py-3">{formatCourseId(course.course_id)}</td>
                   <td className="px-6 py-3">{course.academic_year}</td>
                   <td className="px-6 py-3">{course.academic_term}</td>
+                  <td className="px-6 py-3">
+                    <button
+                      className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
+                      onClick={() => router.push(`/student/${course.course_id}/queue`)}
+                    >
+                      View Queue
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
