@@ -42,8 +42,7 @@ class Person(db.Model):
     # Relationships for Queue Entries:
     # - When the Person is the student in the queue
     # - When the Person is the assigned ULA for a queue entry
-    # These relationships provide a convenient way to query a person's queue entries
-    # without having to query the QueueEntry table directly.
+
     queue_entries = db.relationship(
         "QueueEntry",
         foreign_keys="[QueueEntry.net_id]",
@@ -55,6 +54,16 @@ class Person(db.Model):
         "QueueEntry",
         foreign_keys="[QueueEntry.ula_net_id]",
         back_populates="ula",
+        lazy="dynamic",
+        passive_deletes=True
+    )
+
+    # Relationships for Chat Messages:
+    # - When a person sends a message in the chat
+    chat_messages = db.relationship(
+        "ChatMessage",
+        foreign_keys="[ChatMessage.net_id]",
+        back_populates="person",
         lazy="dynamic",
         passive_deletes=True
     )
@@ -98,6 +107,16 @@ class Course(db.Model):
     # Using lazy="selectin" for efficient batch loading.
     queue = db.relationship(
         "Queue",
+        back_populates="course",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin"
+    )
+
+    # 1:1 relationship with Chat (each course gets exactly one chat table)
+    chat = db.relationship(
+        "Chat",
         back_populates="course",
         uselist=False,
         cascade="all, delete-orphan",
@@ -233,7 +252,7 @@ class QueueEntry(db.Model):
     # Primary Key: Unique ID for each queue entry
     queue_entry_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
-    # Foreign Keys / Relations: (1:1 Course to Queue)
+    # Foreign Keys / Relations: (1:many Queue: Entries)
     queue_id = db.Column(
         db.Integer,
         db.ForeignKey("queue.queue_id", ondelete="CASCADE"),
@@ -250,9 +269,6 @@ class QueueEntry(db.Model):
         nullable=True
     )  # ULA assigned to help, can be null when pending
 
-    # Queue Position (determined dynamically)
-    position = db.Column(db.Integer, nullable=True)
-
     # Required Topic Name
     topic_name = db.Column(db.String, nullable=False)  # Description of the problem
 
@@ -264,6 +280,13 @@ class QueueEntry(db.Model):
         ENUM("Pending", "In Progress", "Completed", name="queue_status_enum"),
         nullable=False,
         server_default="Pending"
+    )
+
+    # Mode Enum: Virtual or In-Person Queue Entry
+    mode = db.Column(
+        ENUM("in-person", "virtual", name = "office_hours_mode_enum"),
+        nullable = False, 
+        server_default="in-person"
     )
 
     # Timing Metrics
@@ -298,12 +321,72 @@ class QueueEntry(db.Model):
         ),
     )
 
-    @staticmethod
-    def get_next_position(queue_id):
-        """Returns the next available position in the queue for a given course, excluding completed entries."""
-        last_position = (
-            db.session.query(db.func.max(QueueEntry.position))
-            .filter(QueueEntry.queue_id == queue_id, QueueEntry.status.in_(["Pending", "In Progress"]))
-            .scalar()
-        )
-        return (last_position or 0) + 1  # If no active entries, start from 1
+
+##########################################
+#               Chat                  #
+##########################################
+class Chat(db.Model):
+    __tablename__ = "chat"
+
+    # Primary Key: Each course gets exactly ONE Chat Table instance
+    chat_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    # Foreign key: Connect back to Course
+    course_id = db.Column(
+        db.String,
+        db.ForeignKey("course.course_id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False
+    )
+
+    # Relationships
+    # Using lazy="joined" for course as it is a 1:1 relationship and using lazy="dynamic" for messages since
+    # there may be a ton of messages and we want to filter them efficiently.
+    course = db.relationship("Course", back_populates="chat", lazy="joined")
+    messages = db.relationship(
+        "ChatMessage",
+        back_populates="chat",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="dynamic"
+    )
+
+##########################################
+#             ChatMessage             #
+##########################################
+class ChatMessage(db.Model):
+    __tablename__ = "chat_message"
+
+    # Primary Key: Unique ID for each chat message
+    chat_message_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    # Foreign Keys / Relations: (1:1 Chat: Messages)
+    chat_id = db.Column(
+        db.Integer,
+        db.ForeignKey("chat.chat_id", ondelete="CASCADE"),
+        nullable=False
+    ) 
+
+    # FK linking Person Table (who sent the message?)
+    net_id = db.Column(
+        db.String,
+        db.ForeignKey("person.net_id", ondelete="CASCADE"),
+        nullable=False
+    ) 
+
+    # Message
+    message = db.Column(db.Text, nullable = False)
+
+    # When message was sent
+    time_sent = db.Column(db.DateTime, nullable=False, server_default=func.now()) 
+
+
+    # Relationships (Eager Loading for performance)
+    # Using lazy="joined" here since when fetching chat messages, we often need the associated person details
+    person = db.relationship(
+        "Person",
+        foreign_keys=[net_id],
+        back_populates="chat_messages",
+        lazy="joined"
+    )
+    chat = db.relationship("Chat", back_populates="messages")

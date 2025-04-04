@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, Queue, Person, ULA, QueueEntry
+from app.models import Student, db, Queue, Person, ULA, QueueEntry
 from sqlalchemy.sql import func
 
 # Create a Blueprint for the Queue routes
@@ -9,13 +9,15 @@ queue_entry_bp = Blueprint("queue_entry", __name__)
 @queue_entry_bp.route("/queue/course/<course_id>/entries", methods=["GET"])
 def get_all_queue_entries_for_course(course_id):
     """Fetches all queue entries for a course."""
+    mode = request.args.get("mode")  # optional query parameter
     queue = Queue.query.filter_by(course_id=course_id).first()
     if not queue:
         return jsonify({"error": f"Queue for course {course_id} not found"}), 404
 
-    queue_entries = QueueEntry.query.filter_by(queue_id=queue.queue_id).order_by(QueueEntry.position).all()
-    if not queue_entries:
-        return jsonify({"error": f"No queue entries found for course {course_id}"}), 404
+    query = QueueEntry.query.filter_by(queue_id=queue.queue_id)
+    if mode:
+        query = query.filter_by(mode=mode)
+    queue_entries = query.order_by(QueueEntry.time_entered).all()
 
     return jsonify([
         {
@@ -23,10 +25,10 @@ def get_all_queue_entries_for_course(course_id):
             "queue_id": q.queue_id,
             "net_id": q.net_id,
             "ula_net_id": q.ula_net_id,
-            "position": q.position,
             "topic_name": q.topic_name,
             "zoom_link": q.zoom_link,
             "status": q.status,
+            "mode": q.mode,
             "time_entered": q.time_entered,
             "time_started": q.time_started,
             "time_finished": q.time_finished
@@ -37,13 +39,23 @@ def get_all_queue_entries_for_course(course_id):
 # GET: Fetch queue entries for a student in a specific course
 @queue_entry_bp.route("/queue/course/<course_id>/person/<net_id>", methods=["GET"])
 def get_queue_by_student_in_course(course_id, net_id):
+    # Verify that the person exists
+    person = Person.query.get(net_id)
+    if not person:
+        return jsonify({"error": f"Student {net_id} not found"}), 404
+
+    # Verify that the student is enrolled in the course.
+    enrollment = Student.query.filter_by(net_id=net_id, course_id=course_id).first()
+    if not enrollment:
+        return jsonify({"error": f"Student {net_id} is not enrolled in course {course_id}"}), 404
+
+    # Verify that the queue exists for the course.
     queue = Queue.query.filter_by(course_id=course_id).first()
     if not queue:
         return jsonify({"error": f"Queue for course {course_id} not found"}), 404
 
+    # Retrieve queue entries for the student.
     queue_entries = QueueEntry.query.filter_by(queue_id=queue.queue_id, net_id=net_id).all()
-    if not queue_entries:
-        return jsonify({"error": f"No queue entries found for student {net_id} in course {course_id}"}), 404
     
     return jsonify([
         {
@@ -51,14 +63,17 @@ def get_queue_by_student_in_course(course_id, net_id):
             "queue_id": q.queue_id,
             "net_id": q.net_id,
             "ula_net_id": q.ula_net_id,
-            "position": q.position,
             "topic_name": q.topic_name,
             "zoom_link": q.zoom_link,
             "status": q.status,
+            "mode": q.mode,
             "time_entered": q.time_entered,
             "time_started": q.time_started,
             "time_finished": q.time_finished
-    } for q in queue_entries]), 200
+        } for q in queue_entries
+    ]), 200
+
+
 
 # POST: Add a student to the queue
 @queue_entry_bp.route("/queue/course/<course_id>/add", methods=["POST"])
@@ -87,16 +102,15 @@ def add_to_queue(course_id):
     if existing_entry:
         return jsonify({"error": "Student already has an active queue entry"}), 409
     
-    position = QueueEntry.get_next_position(queue.queue_id)
 
     new_queue_entry = QueueEntry(
         queue_id = queue.queue_id,
         net_id = data["net_id"],
         ula_net_id = None,
-        position = position,
         topic_name = data["topic_name"].strip(),
         zoom_link = data.get("zoom_link", "").strip() or None,
         status = "Pending",
+        mode = data.get("mode", "in-person").strip(),
         time_entered = func.now(),
         time_started = None,
         time_finished = None
@@ -124,8 +138,6 @@ def complete_queue_entry(queue_entry_id):
     queue_entry.status = "Completed"
     queue_entry.time_finished = func.now()
     db.session.commit()
-
-    adjust_queue_positions(queue_entry.queue_id)
 
     return jsonify({"message": f"Queue entry {queue_entry_id} marked as completed"}), 200
 
@@ -239,19 +251,4 @@ def delete_queue_entry(queue_entry_id):
     db.session.delete(queue_entry)
     db.session.commit()
 
-    adjust_queue_positions(queue_id)
-
     return jsonify({"message": f"Queue entry {queue_entry_id} has been removed"}), 200
-
-# Helper function: Adjust queue positions after a deletion or completion
-def adjust_queue_positions(queue_id):
-    """Reorders queue positions after an entry is removed/completed."""
-    queue_entries = QueueEntry.query.filter(
-        QueueEntry.queue_id == queue_id,
-        QueueEntry.status.in_(["Pending", "In Progress"])
-    ).order_by(QueueEntry.time_entered).all()
-
-    for index, entry in enumerate(queue_entries, start=1):
-        entry.position = index
-
-    db.session.commit()

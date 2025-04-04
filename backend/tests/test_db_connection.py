@@ -9,13 +9,13 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    print("❌ DATABASE_URL not found in .env file. Make sure it's set.")
+    print("DATABASE_URL not found in .env file. Make sure it's set.")
     exit()
 
 # Create a SQLAlchemy engine
 try:
     engine = create_engine(DATABASE_URL)
     with engine.connect() as connection:
-        print("✅ Successfully connected to PostgreSQL database!")
+        print("Successfully connected to PostgreSQL database!")
 except Exception as e:
-    print(f"❌ Failed to connect to the database: {e}")
+    print(f"Failed to connect to the database: {e}")
