@@ -56,6 +56,7 @@ def create_course():
             academic_term=data["academic_term"].strip(),
             enrollment_size=int(data["enrollment_size"]) if data.get("enrollment_size") is not None else None,
             course_staff_size=int(data["course_staff_size"]) if data.get("course_staff_size") is not None else None,
+            calendar_link=data.get("calendar_link", None)
         )
 
         db.session.add(new_course)
