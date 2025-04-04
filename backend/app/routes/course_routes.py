@@ -13,7 +13,8 @@ def get_all_courses():
             "academic_year": c.academic_year,
             "academic_term": c.academic_term,
             "enrollment_size": c.enrollment_size,
-            "course_staff_size": c.course_staff_size
+            "course_staff_size": c.course_staff_size,
+            "calendar_link": course.calendar_link 
         } for c in courses
     ]), 200
 
@@ -28,7 +29,8 @@ def get_course(course_id):
         "academic_year": course.academic_year,
         "academic_term": course.academic_term,
         "enrollment_size": course.enrollment_size,
-        "course_staff_size": course.course_staff_size
+        "course_staff_size": course.course_staff_size,
+        "calendar_link": course.calendar_link 
     }), 200
 
 # POST: Create a new course

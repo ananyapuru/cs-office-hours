@@ -22,8 +22,9 @@ interface Course {
   course_id: string;
   academic_year: string;
   academic_term: string;
-  enrollment_size: number;
-  course_staff_size: number;
+  enrollment_size?: number;
+  course_staff_size?: number;
+  calendar_link?: string;
 }
 
 const InstructorPage: React.FC = () => {
@@ -128,6 +129,63 @@ const InstructorPage: React.FC = () => {
                       Manage Students
                     </button>
                   </td>
+                  <td className="px-6 py-3 space-y-2 flex flex-col">
+                    {course.calendar_link?.trim() ? (
+                      <>
+                        <button
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                          onClick={() => router.push(`/instructor/${course.course_id}/calendar`)}
+                        >
+                          View Calendar
+                        </button>
+                        <button
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                          onClick={() => {
+                            const link = prompt('Enter PUBLIC Google Calendar Link:');
+                            if (link) {
+                              axios.put(`${API_ENDPOINTS.BACKEND_URL}/course/${course.course_id}`, {
+                                calendar_link: link
+                              }, { withCredentials: true })
+                                .then(() => {
+                                  alert('Calendar link updated!');
+                                  window.location.reload();
+                                })
+                                .catch(err => {
+                                  console.error('Failed to update:', err);
+                                  alert('Update failed.');
+                                });
+                            }
+                          }}
+                        >
+                          Edit Calendar
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                        onClick={() => {
+                          const link = prompt('Enter PUBLIC Google Calendar Link:');
+                          if (link) {
+                            axios.put(`${API_ENDPOINTS.BACKEND_URL}/course/${course.course_id}`, {
+                              calendar_link: link
+                            }, { withCredentials: true })
+                              .then(() => {
+                                alert('Calendar link added!');
+                                window.location.reload();
+                              })
+                              .catch(err => {
+                                console.error('Failed to add:', err);
+                                alert('Add failed.');
+                              });
+                          }
+                        }}
+                      >
+                        Add Calendar
+                      </button>
+                    )}
+                  </td>
+
+
                 </tr>
               ))}
             </tbody>

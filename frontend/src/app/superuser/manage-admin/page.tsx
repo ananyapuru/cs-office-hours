@@ -22,6 +22,7 @@ const ManageAdminPage: React.FC = () => {
   const [courseCode, setCourseCode] = useState('');
   const [academicYear, setAcademicYear] = useState('2024-2025');
   const [semester, setSemester] = useState('Spring');
+  const [calendarLink, setCalendarLink] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -78,7 +79,8 @@ const ManageAdminPage: React.FC = () => {
           academic_year: academicYear,
           academic_term: semester,
           enrollment_size: 0,
-          course_staff_size: 0
+          course_staff_size: 0,
+          calendar_link: calendarLink || null
         },
         { withCredentials: true }
       ).catch(err => {
@@ -208,6 +210,13 @@ const ManageAdminPage: React.FC = () => {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+          <input
+            placeholder="Calendar Link (optional)"
+            value={calendarLink}
+            onChange={(e) => setCalendarLink(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+
         </div>
         <button
           onClick={handleAddAdmin}
