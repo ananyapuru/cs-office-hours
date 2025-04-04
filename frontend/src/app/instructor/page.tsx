@@ -122,12 +122,20 @@ const InstructorPage: React.FC = () => {
                   <td className="px-6 py-3">{course.enrollment_size}</td>
                   <td className="px-6 py-3">{course.course_staff_size}</td>
                   <td className="px-6 py-3">
-                    <button
-                      className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
-                      onClick={() => router.push(`/instructor/${course.course_id}/students`)}
-                    >
-                      Manage Students
-                    </button>
+                    <div className="flex flex-col space-y-2">
+                      <button
+                        className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
+                        onClick={() => router.push(`/instructor/${course.course_id}/students`)}
+                      >
+                        Manage Students
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
+                        onClick={() => router.push(`/instructor/${course.course_id}/staff`)}
+                      >
+                        Manage Staff
+                      </button>
+                    </div>
                   </td>
                   <td className="px-6 py-3 space-y-2 flex flex-col">
                     {course.calendar_link?.trim() ? (
