@@ -79,6 +79,12 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
+    
+    # Prevent migrations from double applying our uniquee constraints
+    def include_object(object, name, type_, reflected, compare_to):
+        if type_ == "unique_constraint":
+            return False
+        return True
 
     # this callback is used to prevent an auto-migration from being generated
     # when there are no changes to the schema
@@ -100,6 +106,7 @@ def run_migrations_online():
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
+            include_object=include_object,
             **conf_args
         )
 

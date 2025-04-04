@@ -82,6 +82,7 @@ class Course(db.Model):
     academic_term = db.Column(db.String, nullable=False)
     enrollment_size = db.Column(db.Integer, nullable=True)
     course_staff_size = db.Column(db.Integer, nullable=True)
+    calendar_link = db.Column(db.String, nullable=True)
 
     # Relations (Students, ULAs, Admins have a Many:1 relationship with Course table, many students all map to the same course)
     students = db.relationship(

@@ -5,6 +5,7 @@ import axios from 'axios';
 import { API_ENDPOINTS } from '../constants';
 import SignOutButton from '../components/SignOutButton';
 import { useRouter } from 'next/navigation';
+import { formatCourseId } from '../utils/formatters';
 
 interface User {
   netId: string;
@@ -21,8 +22,9 @@ interface Course {
   course_id: string;
   academic_year: string;
   academic_term: string;
-  enrollment_size: number;
-  course_staff_size: number;
+  enrollment_size?: number;
+  course_staff_size?: number;
+  calendar_link?: string;
 }
 
 const InstructorPage: React.FC = () => {
@@ -31,7 +33,6 @@ const InstructorPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -50,7 +51,6 @@ const InstructorPage: React.FC = () => {
     fetchUser();
   }, []);
 
-  // Fetch instructor courses
   useEffect(() => {
     if (!user) return;
 
@@ -87,7 +87,6 @@ const InstructorPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0e1c2c] text-white px-6 py-8 relative">
-      {/* Top-right Sign Out */}
       <div className="absolute top-4 right-6">
         <SignOutButton />
       </div>
@@ -117,7 +116,7 @@ const InstructorPage: React.FC = () => {
                   key={course.course_id}
                   className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-100'}
                 >
-                  <td className="px-6 py-3">{course.course_id}</td>
+                  <td className="px-6 py-3">{formatCourseId(course.course_id)}</td>
                   <td className="px-6 py-3">{course.academic_year}</td>
                   <td className="px-6 py-3">{course.academic_term}</td>
                   <td className="px-6 py-3">{course.enrollment_size}</td>
@@ -130,20 +129,78 @@ const InstructorPage: React.FC = () => {
                       Manage Students
                     </button>
                   </td>
+                  <td className="px-6 py-3 space-y-2 flex flex-col">
+                    {course.calendar_link?.trim() ? (
+                      <>
+                        <button
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                          onClick={() => router.push(`/instructor/${course.course_id}/calendar`)}
+                        >
+                          View Calendar
+                        </button>
+                        <button
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                          onClick={() => {
+                            const link = prompt('Enter PUBLIC Google Calendar Link:');
+                            if (link) {
+                              axios.put(`${API_ENDPOINTS.BACKEND_URL}/course/${course.course_id}`, {
+                                calendar_link: link
+                              }, { withCredentials: true })
+                                .then(() => {
+                                  alert('Calendar link updated!');
+                                  window.location.reload();
+                                })
+                                .catch(err => {
+                                  console.error('Failed to update:', err);
+                                  alert('Update failed.');
+                                });
+                            }
+                          }}
+                        >
+                          Edit Calendar
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                        onClick={() => {
+                          const link = prompt('Enter PUBLIC Google Calendar Link:');
+                          if (link) {
+                            axios.put(`${API_ENDPOINTS.BACKEND_URL}/course/${course.course_id}`, {
+                              calendar_link: link
+                            }, { withCredentials: true })
+                              .then(() => {
+                                alert('Calendar link added!');
+                                window.location.reload();
+                              })
+                              .catch(err => {
+                                console.error('Failed to add:', err);
+                                alert('Add failed.');
+                              });
+                          }
+                        }}
+                      >
+                        Add Calendar
+                      </button>
+                    )}
+                  </td>
+
+
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-    <div className="text-center mt-10">
-      <button
-        onClick={() => router.push('/welcome')}
-        className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
-      >
-        Back to Welcome Page
-      </button>
-    </div>
+
+      <div className="text-center mt-10">
+        <button
+          onClick={() => router.push('/welcome')}
+          className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
+        >
+          Back to Welcome Page
+        </button>
+      </div>
     </div>
   );
 };
