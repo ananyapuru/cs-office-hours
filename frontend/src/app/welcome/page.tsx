@@ -50,12 +50,10 @@ const WelcomePage: React.FC = () => {
       }, 100);
     }
 
-    // When finished typing
     if (!isDeleting && typedGreeting === currentGreeting) {
-      setTimeout(() => setIsDeleting(true), 2000); // pause before deleting
+      setTimeout(() => setIsDeleting(true), 2000);
     }
 
-    // When finished deleting
     if (isDeleting && typedGreeting === '') {
       setIsDeleting(false);
       setGreetingIndex((prev) => (prev + 1) % greetings.length);
@@ -123,39 +121,43 @@ const WelcomePage: React.FC = () => {
         </span>{' '}
         {nameDisplay}, nice to meet you!
       </h1>
-  
+
       {/* Role Buttons */}
       <div className="flex flex-wrap gap-4 mt-4 justify-center">
-        <button
-          className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
-          disabled={!roles.isStudent}
-        >
-          Student
-        </button>
-        <button
-          className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
-          disabled={!roles.isULA && !roles.isAdmin}
-        >
-          Teaching Staff
-        </button>
-        <button
-          className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
-          disabled={!roles.isAdmin}
-          onClick={() => router.push('/instructor')}
-        >
-          Instructor
-        </button>
-        <button
-          onClick={() => router.push('/superuser')}
-          className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-200 transition"
-          disabled={!roles.isSuperuser}
-        >
-          Superuser
-        </button>
+        {roles.isStudent && (
+          <button
+            onClick={() => router.push('/student')}
+            className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
+          >
+            Student
+          </button>
+        )}
+        {(roles.isULA || roles.isAdmin) && (
+          <button
+            className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
+          >
+            Teaching Staff
+          </button>
+        )}
+        {roles.isAdmin && (
+          <button
+            className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
+            onClick={() => router.push('/instructor')}
+          >
+            Instructor
+          </button>
+        )}
+        {roles.isSuperuser && (
+          <button
+            onClick={() => router.push('/superuser')}
+            className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
+          >
+            Superuser
+          </button>
+        )}
       </div>
     </div>
   );
-  
 };
 
 export default WelcomePage;
