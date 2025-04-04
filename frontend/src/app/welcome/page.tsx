@@ -135,6 +135,7 @@ const WelcomePage: React.FC = () => {
         {(roles.isULA || roles.isAdmin) && (
           <button
             className="px-6 py-3 rounded-xl bg-white text-[#0e1c2c] font-semibold hover:bg-gray-200 transition"
+            onClick={() => router.push('/teachingstaff')}
           >
             Teaching Staff
           </button>
