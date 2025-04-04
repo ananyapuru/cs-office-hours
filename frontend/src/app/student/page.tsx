@@ -13,22 +13,21 @@ interface User {
   lastName?: string;
 }
 
-interface AdminEntry {
+interface StudentEntry {
   net_id: string;
   course_id: string;
+  feedback: string[];
 }
 
 interface Course {
   course_id: string;
   academic_year: string;
   academic_term: string;
-  enrollment_size: number;
-  course_staff_size: number;
 }
 
-const InstructorPage: React.FC = () => {
+const StudentPage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [studentCourses, setStudentCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -53,15 +52,15 @@ const InstructorPage: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    const fetchCourses = async () => {
+    const fetchStudentCourses = async () => {
       try {
-        const adminRes = await axios.get<AdminEntry[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/admins/person/${user.netId}`,
+        const studentRes = await axios.get<StudentEntry[]>(
+          `${API_ENDPOINTS.BACKEND_URL}/students/person/${user.netId}`,
           { withCredentials: true }
         );
 
         const courseDetails = await Promise.all(
-          adminRes.data.map(async (entry) => {
+          studentRes.data.map(async (entry) => {
             const courseRes = await axios.get<Course>(
               `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`,
               { withCredentials: true }
@@ -70,15 +69,15 @@ const InstructorPage: React.FC = () => {
           })
         );
 
-        setCourses(courseDetails);
+        setStudentCourses(courseDetails);
       } catch (error) {
-        console.error('Error fetching instructor courses:', error);
+        console.error('Error fetching student courses:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCourses();
+    fetchStudentCourses();
   }, [user]);
 
   if (loading) return <p className="text-white text-center mt-10">Loading...</p>;
@@ -91,26 +90,23 @@ const InstructorPage: React.FC = () => {
       </div>
 
       <h1 className="text-4xl sm:text-5xl font-bold text-center mb-10">
-        Courses you're instructing
+        Courses you're enrolled in
       </h1>
 
-      {courses.length === 0 ? (
-        <p className="text-center text-gray-300">No courses found for you.</p>
+      {studentCourses.length === 0 ? (
+        <p className="text-center text-gray-300">You are not enrolled in any courses yet.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white text-[#0e1c2c] rounded-xl overflow-hidden">
             <thead className="bg-gray-200 text-left text-lg">
               <tr>
-                <th className="px-6 py-3">Course ID</th>
+                <th className="px-6 py-3">Course No.</th>
                 <th className="px-6 py-3">Academic Year</th>
                 <th className="px-6 py-3">Term</th>
-                <th className="px-6 py-3">Enrollment</th>
-                <th className="px-6 py-3">Staff Size</th>
-                <th className="px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {courses.map((course, idx) => (
+              {studentCourses.map((course, idx) => (
                 <tr
                   key={course.course_id}
                   className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-100'}
@@ -118,16 +114,6 @@ const InstructorPage: React.FC = () => {
                   <td className="px-6 py-3">{formatCourseId(course.course_id)}</td>
                   <td className="px-6 py-3">{course.academic_year}</td>
                   <td className="px-6 py-3">{course.academic_term}</td>
-                  <td className="px-6 py-3">{course.enrollment_size}</td>
-                  <td className="px-6 py-3">{course.course_staff_size}</td>
-                  <td className="px-6 py-3">
-                    <button
-                      className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
-                      onClick={() => router.push(`/instructor/${course.course_id}/students`)}
-                    >
-                      Manage Students
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -147,4 +133,4 @@ const InstructorPage: React.FC = () => {
   );
 };
 
-export default InstructorPage;
+export default StudentPage;
