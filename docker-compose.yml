@@ -24,6 +24,6 @@ services:
       SUPERUSER_NETIDS: "ap2626,jz775"
     depends_on:
       - db
-      
+    command: python backend/app.py 
 volumes:
   pgdata:
