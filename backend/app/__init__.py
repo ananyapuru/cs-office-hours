@@ -8,6 +8,7 @@ import os
 from flask import Flask
 from flask_cors import CORS
 from flask_cas import CAS 
+from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -83,5 +84,11 @@ def create_app():
     app.register_blueprint(course_roster_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(chatmessage_bp)
+    
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+    
+    # print("\nRegistered Flask routes:")
+    # for rule in app.url_map.iter_rules():
+    #     print(rule)
 
-    return app
+    return app, socketio

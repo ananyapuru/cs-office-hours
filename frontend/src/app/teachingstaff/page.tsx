@@ -120,7 +120,7 @@ const TeachingStaffPage: React.FC = () => {
                   <td className="px-6 py-3 space-y-2 flex flex-col">
                     <button
                       className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
-                      onClick={() => router.push(`/student/${course.course_id}/queue`)}
+                      onClick={() => router.push(`/teachingstaff/${course.course_id}/queue`)}
                     >
                       View Queue
                     </button>

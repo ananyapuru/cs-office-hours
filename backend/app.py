@@ -8,10 +8,12 @@ if not hasattr(builtins, 'basestring'):
     builtins.basestring = str
     
 from app import create_app
+from app.socket_events import register_socket_events
 
-app = create_app()
+app, socketio = create_app()
+register_socket_events(socketio)
 
 PORT = int(os.getenv('PORT'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=PORT)
+    socketio.run(app, host='0.0.0.0', port=5002)
