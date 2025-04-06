@@ -35,6 +35,37 @@ def get_all_queue_entries_for_course(course_id):
         } for q in queue_entries
     ]), 200
 
+@queue_entry_bp.route("/queue/course/<course_id>/active-entries", methods=["GET"])
+def get_active_queue_entries_for_course(course_id):
+    """Fetches only active queue entries for a course (excludes completed entries)."""
+    mode = request.args.get("mode")  # Optional query parameter
+    queue = Queue.query.filter_by(course_id=course_id).first()
+    if not queue:
+        return jsonify({"error": f"Queue for course {course_id} not found"}), 404
+
+    query = QueueEntry.query.filter_by(queue_id=queue.queue_id)
+    # Exclude entries where status is "Completed"
+    query = query.filter(QueueEntry.status != "Completed")
+    if mode:
+        query = query.filter_by(mode=mode)
+    queue_entries = query.order_by(QueueEntry.time_entered).all()
+
+    return jsonify([
+        {
+            "queue_entry_id": q.queue_entry_id,
+            "queue_id": q.queue_id,
+            "net_id": q.net_id,
+            "ula_net_id": q.ula_net_id,
+            "topic_name": q.topic_name,
+            "zoom_link": q.zoom_link,
+            "status": q.status,
+            "mode": q.mode,
+            "time_entered": q.time_entered,
+            "time_started": q.time_started,
+            "time_finished": q.time_finished
+        } for q in queue_entries
+    ]), 200
+
 
 # GET: Fetch queue entries for a student in a specific course
 @queue_entry_bp.route("/queue/course/<course_id>/person/<net_id>", methods=["GET"])
@@ -98,7 +129,7 @@ def add_to_queue(course_id):
     # Ensure student does not have another active queue entry
     existing_entry = QueueEntry.query.filter_by(
         net_id=data["net_id"], queue_id=queue.queue_id
-    ).filter(QueueEntry.status.in_(["Pending", "In Progress"])).first()
+    ).filter(QueueEntry.status.in_(["In Queue", "In Progress"])).first()
     if existing_entry:
         return jsonify({"error": "Student already has an active queue entry"}), 409
     
@@ -109,7 +140,7 @@ def add_to_queue(course_id):
         ula_net_id = None,
         topic_name = data["topic_name"].strip(),
         zoom_link = data.get("zoom_link", "").strip() or None,
-        status = "Pending",
+        status = "In Queue",
         mode = data.get("mode", "in-person").strip(),
         time_entered = func.now(),
         time_started = None,

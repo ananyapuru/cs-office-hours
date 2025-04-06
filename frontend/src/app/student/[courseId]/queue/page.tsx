@@ -72,7 +72,7 @@ const StudentQueuePage: React.FC = () => {
   
     const myEntry = queueEntries.find((entry) =>
       entry.net_id === myNetId &&
-      (entry.status === "Pending" || entry.status === "In Progress")
+      (entry.status === "In Queue" || entry.status === "In Progress")
     );
     if (myEntry) {
       setMyEntryId(myEntry.queue_entry_id);
@@ -117,14 +117,14 @@ const StudentQueuePage: React.FC = () => {
   const fetchQueueEntries = async () => {
     try {
       const res = await axios.get<QueueEntry[]>(
-        `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/entries`,
+        `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/active-entries`,
         { withCredentials: true }
       );
       setQueueEntries(res.data);
 
       const myEntry = res.data.find((entry) =>
         entry.net_id === myNetId &&
-        (entry.status === "Pending" || entry.status === "In Progress")
+        (entry.status === "In Queue" || entry.status === "In Progress")
       );
       setMyEntryId(myEntry ? myEntry.queue_entry_id : null);
 

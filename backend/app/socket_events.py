@@ -10,7 +10,11 @@ def fetch_all_entries_for_course(course_id):
     if not queue:
         return []
     
-    entries = QueueEntry.query.filter_by(queue_id=queue.queue_id).order_by(QueueEntry.time_entered).all()
+    # Only return entries that are not marked as "Completed"
+    entries = QueueEntry.query.filter(
+        QueueEntry.queue_id == queue.queue_id,
+        QueueEntry.status != "Completed"
+    ).order_by(QueueEntry.time_entered).all()
 
     entries_data = []
     for entry in entries:
@@ -59,7 +63,7 @@ def register_socket_events(socketio):
         existing_entry = QueueEntry.query.filter(
             QueueEntry.queue_id == queue.queue_id,
             QueueEntry.net_id == net_id,
-            QueueEntry.status.in_(["Pending", "In Progress"])
+            QueueEntry.status.in_(["In Queue", "In Progress"])
         ).first()
 
         if existing_entry:
@@ -71,7 +75,7 @@ def register_socket_events(socketio):
             queue_id=queue.queue_id,
             net_id=net_id,
             topic_name=topic_name.strip(),
-            status="Pending",
+            status="In Queue",
             time_entered=datetime.utcnow()
         )
         db.session.add(new_entry)
@@ -151,3 +155,40 @@ def register_socket_events(socketio):
 
         # Broadcast the updated active status
         emit('queue_status_updated', {'is_active': is_active}, room=course_id)
+
+    @socketio.on('staff_clear_queue')
+    def handle_staff_clear_queue(data):
+        course_id = data.get('course_id')
+        # Find the queue for the course
+        queue = Queue.query.filter_by(course_id=course_id).first()
+        if not queue:
+            emit('error', {'message': 'Queue not found'}, room=course_id)
+            return
+
+        # Delete all entries associated with the queue
+        QueueEntry.query.filter_by(queue_id=queue.queue_id).delete()
+        db.session.commit()
+
+        # Broadcast the updated (now empty) queue
+        broadcast_queue_update(course_id)
+
+    @socketio.on('staff_update_entry')
+    def handle_staff_update_entry(data):
+        course_id = data.get('course_id')
+        queue_entry_id = data.get('queue_entry_id')
+        new_status = data.get('new_status')
+        staff_net_id = data.get('staff_net_id')  # Staff member making the update
+
+        # Fetch the queue entry by its ID
+        entry = QueueEntry.query.get(queue_entry_id)
+        if not entry:
+            emit('error', {'message': 'Queue entry not found'}, room=course_id)
+            return
+
+        # Update the entry status
+        entry.status = new_status
+        entry.ula_net_id = staff_net_id
+        db.session.commit()
+
+        # Broadcast the updated queue
+        broadcast_queue_update(course_id)

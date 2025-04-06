@@ -268,7 +268,7 @@ class QueueEntry(db.Model):
         db.String,
         db.ForeignKey("person.net_id", ondelete="SET NULL"),
         nullable=True
-    )  # ULA assigned to help, can be null when pending
+    )  # ULA assigned to help, can be null when In Queue
 
     # Required Topic Name
     topic_name = db.Column(db.String, nullable=False)  # Description of the problem
@@ -276,11 +276,11 @@ class QueueEntry(db.Model):
     # Optional Zoom Link (for remote office hours)
     zoom_link = db.Column(db.String, nullable=True)
 
-    # Status Enum: Pending → In Progress → Completed
+    # Status Enum: In Queue → In Progress → Completed
     status = db.Column(
-        ENUM("Pending", "In Progress", "Completed", name="queue_status_enum"),
+        ENUM("In Queue", "In Progress", "Completed", name="queue_status_enum"),
         nullable=False,
-        server_default="Pending"
+        server_default="In Queue"
     )
 
     # Mode Enum: Virtual or In-Person Queue Entry
@@ -311,14 +311,14 @@ class QueueEntry(db.Model):
     )
     queue = db.relationship("Queue", back_populates="entries")
 
-    # Unique Constraint: Prevent multiple active entries by only allowing one "Pending" or "In Progress" entry at a time
+    # Unique Constraint: Prevent multiple active entries by only allowing one "In Queue" or "In Progress" entry at a time
     __table_args__ = (
         Index(
             "unique_active_queue_entry",
             "net_id",
             "queue_id",
             unique=True,
-            postgresql_where=db.text("status IN ('Pending', 'In Progress')")
+            postgresql_where=db.text("status IN ('In Queue', 'In Progress')")
         ),
     )
 

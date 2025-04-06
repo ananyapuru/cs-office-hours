@@ -85,10 +85,10 @@ def create_app():
     app.register_blueprint(chat_bp)
     app.register_blueprint(chatmessage_bp)
     
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+    # socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
     
     # print("\nRegistered Flask routes:")
     # for rule in app.url_map.iter_rules():
     #     print(rule)
 
-    return app, socketio
+    return app

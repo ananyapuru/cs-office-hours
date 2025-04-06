@@ -189,7 +189,7 @@ def test_end_to_end():
     # Now, get the active entry for person7 in COURSE_2.
     r_person7_entries = requests.get(f"{BASE_URL}/queue/course/COURSE_2/person/person7")
     assert r_person7_entries.status_code == 200, f"Failed to get entries for person7 in COURSE_2: {r_person7_entries.json()}"
-    active_entries = [entry for entry in r_person7_entries.json() if entry["status"] in ["Pending", "In Progress"]]
+    active_entries = [entry for entry in r_person7_entries.json() if entry["status"] in ["In Queue", "In Progress"]]
     assert active_entries, "No active entry found for person7 in COURSE_2, but one was expected."
     
     # Mark the first active entry as completed.
