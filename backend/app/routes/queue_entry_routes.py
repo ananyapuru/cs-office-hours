@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import Student, db, Queue, Person, ULA, QueueEntry
 from sqlalchemy.sql import func
+from ..auth import roles_required
 
 # Create a Blueprint for the Queue routes
 queue_entry_bp = Blueprint("queue_entry", __name__)
@@ -36,6 +37,7 @@ def get_all_queue_entries_for_course(course_id):
     ]), 200
 
 @queue_entry_bp.route("/queue/course/<course_id>/active-entries", methods=["GET"])
+@roles_required(['instructor', 'ULA'])
 def get_active_queue_entries_for_course(course_id):
     """Fetches only active queue entries for a course (excludes completed entries)."""
     mode = request.args.get("mode")  # Optional query parameter

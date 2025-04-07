@@ -34,10 +34,14 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
     // Function to fetch queue entries via your active entries endpoint
     const fetchQueueEntries = async () => {
         try {
-            const res = await axios.get<QueueEntry[]>(
-                `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/active-entries`,
-                { withCredentials: true }
-            );
+                const token = localStorage.getItem('jwtToken');
+                const res = await axios.get<QueueEntry[]>(
+                `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/active-entries`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    withCredentials: true,
+            });
             setQueueEntries(res.data);
         } catch (err) {
             console.error('Error fetching queue entries:', err);

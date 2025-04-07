@@ -55,9 +55,13 @@ const ManageStaffPage: React.FC = () => {
     fetchStaff();
   }, [courseId]);
 
+  const token = localStorage.getItem('jwtToken');
   const handleDelete = async (net_id: string) => {
     try {
       await axios.delete(`${API_ENDPOINTS.BACKEND_URL}/ula/${net_id}/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         withCredentials: true,
       });
       setStaff((prev) => prev.filter((s) => s.net_id !== net_id));

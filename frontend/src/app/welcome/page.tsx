@@ -101,6 +101,27 @@ const WelcomePage: React.FC = () => {
     fetchRoles();
   }, [user]);
 
+  // generate JWT token
+  // Fetch token once the user is authenticated
+  useEffect(() => {
+    if (!user) return;
+    const fetchToken = async () => {
+      try {
+        const res = await axios.get<{ token: string }>(
+          `${API_ENDPOINTS.BACKEND_URL}/token`,
+          { withCredentials: true }
+        );
+        // Store token in localStorage
+        localStorage.setItem('jwtToken', res.data.token);
+      } catch (error) {
+        console.error('Error fetching token:', error);
+      }
+    };
+    fetchToken();
+  }, [user]);
+
+
+
   if (loading) return <p>Loading...</p>;
   if (!user) return <p>You are not logged in.</p>;
 

@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, ULA, Person, Course
+from ..auth import roles_required
 
 # Create a Blueprint for the ULA routes
 ula_bp = Blueprint("ula", __name__)
@@ -90,6 +91,7 @@ def enroll_ula():
         return jsonify({"error": str(e)}), 500
 
 # DELETE: Remove a ULA from a course
+@roles_required(['instructor'])
 @ula_bp.route("/ula/<net_id>/<course_id>", methods=["DELETE"])
 def unenroll_ula(net_id, course_id):
     ula = ULA.query.get((net_id, course_id))
