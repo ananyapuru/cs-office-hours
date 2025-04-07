@@ -1,8 +1,11 @@
 # app/socket_events.py
 import requests
-from flask_socketio import join_room, emit
+import jwt
+from flask_socketio import join_room, emit, disconnect
+from flask import request, current_app
 from app.models import db, Queue, QueueEntry, Course
 from datetime import datetime
+from .auth import socket_roles_required
 
 # Helper to fetch all queue entries for a course
 def fetch_all_entries_for_course(course_id):
@@ -37,7 +40,37 @@ def broadcast_queue_update(course_id):
 # Register all Socket.IO event handlers for queue management
 def register_socket_events(socketio):
 
+    @socketio.on('connect')
+    def on_connect():
+        # 1) Extract token
+        token = request.args.get('token')
+        if not token:
+            emit('error', {'message': 'Missing token'})
+            return disconnect()
+
+        # 2) Decode & verify
+        try:
+            payload = jwt.decode(
+                token,
+                current_app.secret_key,
+                algorithms=['HS256']
+            )
+        except jwt.ExpiredSignatureError:
+            emit('error', {'message': 'Token expired'})
+            return disconnect()
+        except jwt.InvalidTokenError:
+            emit('error', {'message': 'Invalid token'})
+            return disconnect()
+
+        # 3) Stash user info
+        # We encoded: { netid, roles: {...}, exp }
+        request.environ['user'] = {
+            'net_id': payload.get('netid'),
+            'roles': payload.get('roles', {})
+        }
+        
     @socketio.on('join_room')
+    @socket_roles_required(required_roles=['student','ULA','instructor'])
     def handle_join_room(data):
         # A client joins a course-specific room
         course_id = data.get('course_id')
@@ -46,6 +79,7 @@ def register_socket_events(socketio):
             emit('joined_room', {'message': f'Joined room for course {course_id}'})
 
     @socketio.on('student_join_queue')
+    @socket_roles_required(required_roles=['student'])
     def handle_student_join_queue(data):
         # Student attempts to join the queue
         course_id = data.get('course_id')
@@ -85,6 +119,7 @@ def register_socket_events(socketio):
         broadcast_queue_update(course_id)
 
     @socketio.on('staff_remove_entry')
+    @socket_roles_required(required_roles=['instructor', 'ULA'])
     def handle_staff_remove_entry(data):
         # Staff forcibly removes a student from the queue
         course_id = data.get('course_id')
@@ -98,6 +133,7 @@ def register_socket_events(socketio):
         broadcast_queue_update(course_id)
 
     @socketio.on('student_leave_queue')
+    @socket_roles_required(required_roles=['student'])
     def handle_student_leave_queue(data):
         # Student voluntarily leaves the queue
         course_id = data.get('course_id')
@@ -118,6 +154,7 @@ def register_socket_events(socketio):
         broadcast_queue_update(course_id)
 
     @socketio.on('toggle_queue')
+    @socket_roles_required(required_roles=['student'])
     def handle_toggle_queue(data):
         # Student toggles the queue's active status
         course_id = data.get('course_id')
@@ -136,6 +173,7 @@ def register_socket_events(socketio):
         emit('queue_status_updated', {'is_active': is_active}, room=course_id)
 
     @socketio.on('staff_toggle_queue')
+    @socket_roles_required(required_roles=['instructor', 'ULA'])
     def handle_staff_toggle_queue(data):
         # Staff toggles the queue's active status (creates if missing)
         course_id = data.get('course_id')
@@ -157,6 +195,7 @@ def register_socket_events(socketio):
         emit('queue_status_updated', {'is_active': is_active}, room=course_id)
 
     @socketio.on('staff_clear_queue')
+    @socket_roles_required(required_roles=['instructor', 'ULA'])
     def handle_staff_clear_queue(data):
         course_id = data.get('course_id')
         # Find the queue for the course
@@ -173,6 +212,7 @@ def register_socket_events(socketio):
         broadcast_queue_update(course_id)
 
     @socketio.on('staff_update_entry')
+    @socket_roles_required(required_roles=['instructor', 'ULA'])
     def handle_staff_update_entry(data):
         course_id = data.get('course_id')
         queue_entry_id = data.get('queue_entry_id')

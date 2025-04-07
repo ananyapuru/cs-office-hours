@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import io from 'socket.io-client';
+import React, { useEffect, useState, useRef } from 'react';
+import io, { Socket } from 'socket.io-client';
 import axios from 'axios';
 import { API_ENDPOINTS } from '@/app/constants';
 import { useParams, useRouter } from 'next/navigation';
 import SignOutButton from '@/app/components/SignOutButton';
 import { formatCourseId } from '@/app/utils/formatters';
 
-const socket = io(API_ENDPOINTS.BACKEND_URL);
+// const socket = io(API_ENDPOINTS.BACKEND_URL);
 
 interface QueueEntry {
     queue_entry_id: number;
@@ -30,6 +30,7 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
     const [queueEntries, setQueueEntries] = useState<QueueEntry[]>([]);
     const [queueActive, setQueueActive] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const socketRef = useRef<Socket | null>(null);
 
     // Function to fetch queue entries via your active entries endpoint
     const fetchQueueEntries = async () => {
@@ -49,39 +50,101 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
         }
     };
 
+    // useEffect(() => {
+    //     if (!courseId) return;
+
+    //     socket.emit('join_room', { course_id: courseId });
+
+    //     socket.on('queue_updated', (data) => {
+    //         setQueueEntries(data.entries);
+    //     });
+
+    //     socket.on('queue_status_updated', (data) => {
+    //         setQueueActive(data.is_active); // 🛠 Update instantly when queue status changes
+    //     });
+
+    //     socket.on('error', (data) => {
+    //         setError(data.message);
+    //     });
+
+    //     fetchQueueStatus();
+    //     fetchQueueEntries();
+
+    //     return () => {
+    //         socket.off('queue_updated');
+    //         socket.off('queue_status_updated'); // 🛠 Clean up
+    //         socket.off('error');
+    //     };
+    // }, [courseId]);
     useEffect(() => {
         if (!courseId) return;
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+        setError('Not authenticated');
+        return;
+        }
 
-        socket.emit('join_room', { course_id: courseId });
+        // 1) Create socket with token in query
+        const socket = io(API_ENDPOINTS.BACKEND_URL, {
+        query: { token },
+        transports: ['websocket'],
+        });
+        socketRef.current = socket;
 
+        // 2) Join the course room
+        socket.on('connect', () => {
+            socket.emit('join_room', { course_id: courseId });
+        })
+        // 3) Listen for updates & errors
         socket.on('queue_updated', (data) => {
-            setQueueEntries(data.entries);
+        setQueueEntries(data.entries);
         });
-
         socket.on('queue_status_updated', (data) => {
-            setQueueActive(data.is_active); // 🛠 Update instantly when queue status changes
+        setQueueActive(data.is_active);
+        });
+        socket.on('error', (err: { message: string }) => {
+        setError(err.message);
+        });
+        socket.on('disconnect', (reason: string) => {
+        if (reason === 'io server disconnect') {
+            // server force‑disconnected us (likely auth failure)
+            setError('Disconnected: authentication failed');
+        }
         });
 
-        socket.on('error', (data) => {
-            setError(data.message);
-        });
-
+        // Fetch initial state
         fetchQueueStatus();
         fetchQueueEntries();
 
-        return () => {
-            socket.off('queue_updated');
-            socket.off('queue_status_updated'); // 🛠 Clean up
-            socket.off('error');
+        // Cleanup on unmount or course change
+    return () => {
+        socket.off('connect');
+        socket.off('queue_updated');
+        socket.off('queue_status_updated');
+        socket.off('error');
+        socket.disconnect();
         };
     }, [courseId]);
 
+        // Helper to emit with the live socket
+        const emit = (event: string, data: any) => {
+            if (!socketRef.current) {
+            setError('Socket not connected');
+            return;
+            }
+            socketRef.current.emit(event, data);
+        };
+
     const fetchQueueStatus = async () => {
         try {
-            const res = await axios.get<{ course_id: string; is_active: boolean }>(
-                `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/status`,
-                { withCredentials: true }
-            );
+                const token = localStorage.getItem('jwtToken');
+                const res = await axios.get<{ course_id: string; is_active: boolean }>(
+                `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/status`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    withCredentials: true,
+            });
             setQueueActive(res.data.is_active);
         } catch (err) {
             console.error('Error fetching queue status:', err);
@@ -90,7 +153,7 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
 
     const toggleQueue = (active: boolean) => {
         setQueueActive(active); // Optimistic update
-        socket.emit('staff_toggle_queue', {
+        emit('staff_toggle_queue', {
             course_id: courseId,
             is_active: active,
         });
@@ -98,7 +161,7 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
 
     const handleStatusChange = (entryId: number, newStatus: string) => {
         const staffNetId = "jz775"; // TODO: Change this to the actual netid after we implement tokens
-        socket.emit('staff_update_entry', {
+        emit('staff_update_entry', {
             course_id: courseId,
             queue_entry_id: entryId,
             new_status: newStatus,
@@ -107,14 +170,14 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
     };
 
     const handleDeleteEntry = (entryId: number) => {
-        socket.emit('staff_remove_entry', {
+        emit('staff_remove_entry', {
             course_id: courseId,
             queue_entry_id: entryId,
         });
     };
 
     const clearQueue = () => {
-        socket.emit('staff_clear_queue', { course_id: courseId });
+        emit('staff_clear_queue', { course_id: courseId });
     };
     
     return (

@@ -102,12 +102,15 @@ def generate_token():
     roles = {}
 
     # Populate token with roles
-    for student in person.students:
-        roles[student.course_id] = "student"
-    for ula in person.ulas:
-        roles[ula.course_id] = "ULA"
-    for admin in person.admins:
-        roles[admin.course_id] = "instructor"
+    def add_role(course_id, role):
+        roles.setdefault(course_id, []).append(role)
+
+    for s in person.students:
+        add_role(s.course_id, "student")
+    for u in person.ulas:
+        add_role(u.course_id, "ULA")
+    for a in person.admins:
+        add_role(a.course_id, "instructor")
 
     # Create the payload, set expiration time = 
     payload = {

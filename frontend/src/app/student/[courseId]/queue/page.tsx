@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import io from 'socket.io-client';
+import React, { useEffect, useState, useRef } from 'react';
+import io, { Socket } from 'socket.io-client';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import SignOutButton from '@/app/components/SignOutButton';
 import { API_ENDPOINTS } from '@/app/constants';
 
-const socket = io(API_ENDPOINTS.BACKEND_URL);
+// const socket = io(API_ENDPOINTS.BACKEND_URL);
 
 interface QueueEntry {
   queue_entry_id: number;
@@ -34,58 +34,129 @@ const StudentQueuePage: React.FC = () => {
   const [topic, setTopic] = useState<string>('');
   const [myEntryId, setMyEntryId] = useState<number | null>(null);
   const [myNetId, setMyNetId] = useState<string>('');
+  const socketRef = useRef<Socket | null>(null);
 
-  useEffect(() => {
-    if (!courseId) return;
+  // useEffect(() => {
+  //   if (!courseId) return;
   
-    socket.emit('join_room', { course_id: courseId });
+  //   socket.emit('join_room', { course_id: courseId });
   
+  //   socket.on('queue_updated', (data) => {
+  //     setQueueEntries(data.entries);
+  //   });
+  
+  //   socket.on('queue_status_updated', (data) => {
+  //     setQueueActive(data.is_active);
+  //   });
+  
+  //   socket.on('error', (data) => {
+  //     setError(data.message);
+  //   });
+  
+  //   fetchUser();
+  //   fetchQueueStatus();
+  
+  //   return () => {
+  //     socket.off('queue_updated');
+  //     socket.off('queue_status_updated');
+  //     socket.off('error');
+  //   };
+  // }, [courseId]);
+  
+  // useEffect(() => {
+  //   if (!myNetId) return;
+  //   fetchQueueEntries();
+  // }, [myNetId]);
+  
+  // useEffect(() => {
+  //   if (!myNetId) return;
+  
+  //   const myEntry = queueEntries.find((entry) =>
+  //     entry.net_id === myNetId &&
+  //     (entry.status === "In Queue" || entry.status === "In Progress")
+  //   );
+  //   if (myEntry) {
+  //     setMyEntryId(myEntry.queue_entry_id);
+  //   } else {
+  //     setMyEntryId(null);
+  //   }
+  // }, [queueEntries, myNetId]);
+
+  // useEffect(() => {
+  //   if (myNetId) {
+  //     fetchQueueEntries(); // Only after we know who the user is
+  //   }
+  // }, [myNetId]);
+   useEffect(() => {
+    if (!courseId || !myNetId) return;
+
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+      setError('Not authenticated');
+      return;
+    }
+
+    const socket = io(API_ENDPOINTS.BACKEND_URL, {
+      query: { token },
+      transports: ['websocket'],
+    });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      socket.emit('join_room', { course_id: courseId });
+    });
+
     socket.on('queue_updated', (data) => {
       setQueueEntries(data.entries);
+
+      // update myEntryId on real‑time change
+      const myEntry = data.entries.find(e =>
+        e.net_id === myNetId &&
+        ['In Queue','In Progress'].includes(e.status)
+      );
+      setMyEntryId(myEntry ? myEntry.queue_entry_id : null);
     });
-  
+
     socket.on('queue_status_updated', (data) => {
       setQueueActive(data.is_active);
     });
-  
-    socket.on('error', (data) => {
-      setError(data.message);
+
+    socket.on('error', (err: { message: string }) => {
+      setError(err.message);
     });
-  
-    fetchUser();
+
+    socket.on('disconnect', (reason) => {
+      if (reason === 'io server disconnect') {
+        setError('Disconnected: authentication failed');
+      }
+    });
+
+    // Initial REST fetch
     fetchQueueStatus();
-  
+    fetchQueueEntries();
+
     return () => {
+      socket.off('connect');
       socket.off('queue_updated');
       socket.off('queue_status_updated');
       socket.off('error');
+      socket.disconnect();
     };
-  }, [courseId]);
-  
-  useEffect(() => {
-    if (!myNetId) return;
-    fetchQueueEntries();
-  }, [myNetId]);
-  
-  useEffect(() => {
-    if (!myNetId) return;
-  
-    const myEntry = queueEntries.find((entry) =>
-      entry.net_id === myNetId &&
-      (entry.status === "In Queue" || entry.status === "In Progress")
-    );
-    if (myEntry) {
-      setMyEntryId(myEntry.queue_entry_id);
-    } else {
-      setMyEntryId(null);
-    }
-  }, [queueEntries, myNetId]);
+  }, [courseId, myNetId]);
 
+  // First, load user
   useEffect(() => {
-    if (myNetId) {
-      fetchQueueEntries(); // Only after we know who the user is
+    fetchUser();
+  }, []);
+
+  // Emit helper
+  const emit = (event: string, data: any) => {
+    if (!socketRef.current) {
+      setError('Socket not connected');
+      return;
     }
-  }, [myNetId]);
+    socketRef.current.emit(event, data);
+  };
 
   const fetchUser = async () => {
     try {
@@ -104,10 +175,14 @@ const StudentQueuePage: React.FC = () => {
 
   const fetchQueueStatus = async () => {
     try {
-      const res = await axios.get<{ course_id: string; is_active: boolean }>(
-        `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/status`,
-        { withCredentials: true }
-      );
+          const token = localStorage.getItem('jwtToken');
+          const res = await axios.get<{ course_id: string; is_active: boolean }>(
+          `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/status`, {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              },
+              withCredentials: true,
+      });
       setQueueActive(res.data.is_active);
     } catch (err) {
       console.error('Error fetching queue status:', err);
@@ -147,7 +222,7 @@ const StudentQueuePage: React.FC = () => {
       setError('Please enter a topic before joining.');
       return;
     }
-    socket.emit('student_join_queue', {
+    emit('student_join_queue', {
       course_id: courseId,
       net_id: myNetId,
       topic_name: topic,
@@ -158,7 +233,7 @@ const StudentQueuePage: React.FC = () => {
 
   const handleLeaveQueue = () => {
     if (myEntryId) {
-      socket.emit('student_leave_queue', {
+      emit('student_leave_queue', {
         course_id: courseId,
         queue_entry_id: myEntryId,
       });
