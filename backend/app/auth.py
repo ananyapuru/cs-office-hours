@@ -60,4 +60,25 @@ def socket_roles_required(required_roles, course_id_key='course_id'):
         return decorated
     return decorator
 
+# Only check if netid is in the token (for routes that don't need a specific per role check)
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.headers.get('Authorization', '')
+        parts = auth.split()
+        if len(parts)!=2 or parts[0].lower()!='bearer':
+            return jsonify(error='Token missing'), 401
+        token = parts[1]
+        try:
+            payload = jwt.decode(token, current_app.secret_key, algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            return jsonify(error='Token expired'), 401
+        except jwt.InvalidTokenError:
+            return jsonify(error='Invalid token'), 401
+
+        request.user = payload.get('netid')
+        return f(*args, **kwargs)
+    return decorated
+
+
 

@@ -1,12 +1,13 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, ULA, Person, Course
-from ..auth import roles_required
+from ..auth import roles_required, login_required
 
 # Create a Blueprint for the ULA routes
 ula_bp = Blueprint("ula", __name__)
 
 # GET: Fetch all ULAs
 @ula_bp.route("/ulas", methods=["GET"])
+@roles_required(['instructor'])
 def get_all_ulas():
     ulas = ULA.query.all()
     return jsonify([
@@ -20,6 +21,7 @@ def get_all_ulas():
 
 # GET: Fetch ULAs by CourseID
 @ula_bp.route("/ulas/course/<course_id>", methods=["GET"])
+@roles_required(['instructor'])
 def get_ulas_by_course(course_id):
     ulas = ULA.query.filter_by(course_id=course_id).all()
     if not ulas:
@@ -36,6 +38,7 @@ def get_ulas_by_course(course_id):
 
 # GET: Fetch courses ULAs are teaching by NetID
 @ula_bp.route("/ulas/person/<net_id>", methods=["GET"])
+@login_required
 def get_ulas_by_netid(net_id):
     ulas = ULA.query.filter_by(net_id=net_id).all()
     if not ulas:
@@ -52,6 +55,7 @@ def get_ulas_by_netid(net_id):
 
 # POST: Enroll a ULA in a course
 @ula_bp.route("/ula", methods=["POST"])
+@roles_required(['instructor'])
 def enroll_ula():
     data = request.json
 
@@ -91,8 +95,8 @@ def enroll_ula():
         return jsonify({"error": str(e)}), 500
 
 # DELETE: Remove a ULA from a course
-@roles_required(['instructor'])
 @ula_bp.route("/ula/<net_id>/<course_id>", methods=["DELETE"])
+@roles_required(['instructor'])
 def unenroll_ula(net_id, course_id):
     ula = ULA.query.get((net_id, course_id))
     if not ula:
@@ -104,6 +108,7 @@ def unenroll_ula(net_id, course_id):
 
 # PUT: Replace all feedback
 @ula_bp.route("/ula/<net_id>/<course_id>/feedback", methods=["PUT"])
+@roles_required(['instructor'])
 def replace_ula_feedback(net_id, course_id):
     ula = ULA.query.get((net_id, course_id))
     if not ula:
@@ -121,6 +126,7 @@ def replace_ula_feedback(net_id, course_id):
 
 # PATCH: Append new feedback messages
 @ula_bp.route("/ula/<net_id>/<course_id>/feedback", methods=["PATCH"])
+@roles_required(['student', 'instructor', 'ULA'])
 def append_ula_feedback(net_id, course_id):
     ula = ULA.query.get((net_id, course_id))
     if not ula:
@@ -140,6 +146,7 @@ def append_ula_feedback(net_id, course_id):
 
 # PATCH: Edit specific feedback message by index
 @ula_bp.route("/ula/<net_id>/<course_id>/feedback/<int:index>", methods=["PATCH"])
+@roles_required(['instructor'])
 def edit_ula_feedback(net_id, course_id, index):
     ula = ULA.query.get((net_id, course_id))
     if not ula:
@@ -161,6 +168,7 @@ def edit_ula_feedback(net_id, course_id, index):
 
 # DELETE: Remove specific feedback message by index
 @ula_bp.route("/ula/<net_id>/<course_id>/feedback/<int:index>", methods=["DELETE"])
+@roles_required(['instructor'])
 def delete_ula_feedback_entry(net_id, course_id, index):
     ula = ULA.query.get((net_id, course_id))
     if not ula:
@@ -176,6 +184,7 @@ def delete_ula_feedback_entry(net_id, course_id, index):
 
 # DELETE: Clear all feedback messages
 @ula_bp.route("/ula/<net_id>/<course_id>/feedback", methods=["DELETE"])
+@roles_required(['instructor'])
 def clear_ula_feedback(net_id, course_id):
     ula = ULA.query.get((net_id, course_id))
     if not ula:
@@ -187,6 +196,7 @@ def clear_ula_feedback(net_id, course_id):
 
 # PATCH: Update Zoom Link
 @ula_bp.route("/ula/<net_id>/<course_id>/zoom", methods=["PATCH"])
+@roles_required(['instructor', 'student', 'ULA'])
 def update_zoom_link(net_id, course_id):
     ula = ULA.query.get((net_id, course_id))
     if not ula:
@@ -204,6 +214,7 @@ def update_zoom_link(net_id, course_id):
 
 # DELETE: Remove Zoom Link (set to NULL)
 @ula_bp.route("/ula/<net_id>/<course_id>/zoom", methods=["DELETE"])
+@roles_required(['instructor', 'student', 'ULA'])
 def delete_zoom_link(net_id, course_id):
     ula = ULA.query.get((net_id, course_id))
     if not ula:
