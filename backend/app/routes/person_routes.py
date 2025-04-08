@@ -2,13 +2,14 @@ import os
 import re
 from flask import Blueprint, request, jsonify, current_app
 from app.models import db, Person, Student, ULA, Admin
-
+from ..auth import roles_required, login_required
 
 # Create a Blueprint for the Person routes
 person_bp = Blueprint("person", __name__)
 
 # GET: Fetch All Persons
 @person_bp.route("/person", methods = ["GET"])
+@roles_required(['instructor'])
 def get_all_people():
     people = Person.query.all()
     return jsonify([
@@ -24,6 +25,7 @@ def get_all_people():
 
 # GET: Fetch a single person by net_id
 @person_bp.route("/person/<net_id>", methods = ["GET"])
+@login_required
 def get_person(net_id):
     person = Person.query.get(net_id)
     if not person:
@@ -39,6 +41,7 @@ def get_person(net_id):
 
 # POST: Create a new person
 @person_bp.route("/person", methods=["POST"])
+@login_required
 def create_person():
     data = request.json
 
@@ -80,6 +83,7 @@ def create_person():
 
 # PUT: Update an existing person
 @person_bp.route("/person/<net_id>", methods=["PUT"])
+@login_required
 def update_person(net_id):
     person = Person.query.get(net_id)
     if not person:
@@ -115,6 +119,7 @@ def update_person(net_id):
 
 # PATCH: Update a specific field (Partial Update)
 @person_bp.route("/person/<net_id>", methods=["PATCH"])
+@login_required
 def patch_person(net_id):
     person = Person.query.get(net_id)
     if not person:
@@ -150,6 +155,7 @@ def patch_person(net_id):
 
 # DELETE: Remove a person from the database
 @person_bp.route("/person/<net_id>", methods=["DELETE"])
+@roles_required(['instructor'])
 def delete_person(net_id):
     person = Person.query.get(net_id)
     if not person:

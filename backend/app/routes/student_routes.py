@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, Student, Person, Course
 from app.utils import fetch_from_yalies
+from ..auth import roles_required, login_required
 
 # Create a Blueprint for the Student routes
 student_bp = Blueprint("student", __name__)
 
 # GET: Fetch all students
 @student_bp.route("/students", methods=["GET"])
+@roles_required(['instructor'])
 def get_all_students():
     students = Student.query.all()
     return jsonify([
@@ -19,6 +21,7 @@ def get_all_students():
 
 # GET: Fetch students by CourseID
 @student_bp.route("/students/course/<course_id>", methods=["GET"])
+@roles_required(['instructor'])
 def get_students_by_course(course_id):
     students = Student.query.filter_by(course_id=course_id).all()
     if not students:
@@ -34,6 +37,7 @@ def get_students_by_course(course_id):
 
 # GET: Fetch courses students are enrolled in by NetID
 @student_bp.route("/students/person/<net_id>", methods=["GET"])
+@login_required
 def get_students_by_netid(net_id):
     students = Student.query.filter_by(net_id=net_id).all()
     if not students:
@@ -49,6 +53,7 @@ def get_students_by_netid(net_id):
 
 # POST: Enroll a student in a course
 @student_bp.route("/student", methods=["POST"])
+@login_required
 def enroll_student():
     data = request.json
 
@@ -88,6 +93,7 @@ def enroll_student():
 
 # DELETE: Remove a student from a course
 @student_bp.route("/student/<net_id>/<course_id>", methods=["DELETE"])
+@roles_required(['instructor'])
 def unenroll_student(net_id, course_id):
     student = Student.query.get((net_id, course_id))
     if not student:
@@ -99,6 +105,7 @@ def unenroll_student(net_id, course_id):
 
 # PUT: Replace all feedback
 @student_bp.route("/student/<net_id>/<course_id>/feedback", methods=["PUT"])
+@roles_required(['instructor'])
 def replace_student_feedback(net_id, course_id):
     student = Student.query.get((net_id, course_id))
     if not student:
@@ -116,6 +123,7 @@ def replace_student_feedback(net_id, course_id):
 
 # PATCH: Append new feedback messages
 @student_bp.route("/student/<net_id>/<course_id>/feedback", methods=["PATCH"])
+@roles_required(['instructor', 'ULA'])
 def append_student_feedback(net_id, course_id):
     student = Student.query.get((net_id, course_id))
     if not student:
@@ -135,6 +143,7 @@ def append_student_feedback(net_id, course_id):
 
 # PATCH: Edit specific feedback message by index
 @student_bp.route("/student/<net_id>/<course_id>/feedback/<int:index>", methods=["PATCH"])
+@roles_required(['instructor', 'ULA'])
 def edit_student_feedback(net_id, course_id, index):
     student = Student.query.get((net_id, course_id))
     if not student:
@@ -156,6 +165,7 @@ def edit_student_feedback(net_id, course_id, index):
 
 # DELETE: Remove specific feedback message by index
 @student_bp.route("/student/<net_id>/<course_id>/feedback/<int:index>", methods=["DELETE"])
+@roles_required(['instructor', 'ULA'])
 def delete_student_feedback_entry(net_id, course_id, index):
     student = Student.query.get((net_id, course_id))
     if not student:
@@ -171,6 +181,7 @@ def delete_student_feedback_entry(net_id, course_id, index):
 
 # DELETE: Clear all feedback messages
 @student_bp.route("/student/<net_id>/<course_id>/feedback", methods=["DELETE"])
+@roles_required(['instructor', 'ULA'])
 def clear_student_feedback(net_id, course_id):
     student = Student.query.get((net_id, course_id))
     if not student:
@@ -182,6 +193,7 @@ def clear_student_feedback(net_id, course_id):
 
 
 @student_bp.route("/enroll-via-yalies", methods=["POST"])
+@login_required
 def enroll_student_via_yalies():
     data = request.json
     net_id = data.get("net_id", "").strip()

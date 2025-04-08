@@ -33,10 +33,14 @@ const ManageAdminPage: React.FC = () => {
 
   const fetchAdmins = async () => {
     try {
+      const token = localStorage.getItem('jwtToken');
       const res = await axios.get<AdminEntry[]>(
-        `${API_ENDPOINTS.BACKEND_URL}/admins`,
-        { withCredentials: true }
-      );
+        `${API_ENDPOINTS.BACKEND_URL}/admins`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                withCredentials: true,
+            });
       setAdmins(res.data);
     } catch (err) {
       console.error('Error fetching admins:', err);
@@ -71,6 +75,7 @@ const ManageAdminPage: React.FC = () => {
     const course_id = formatCourseId();
 
     try {
+      const token = localStorage.getItem('jwtToken');
       // First ensure course exists
       await axios.post(
         `${API_ENDPOINTS.BACKEND_URL}/course`,
@@ -81,9 +86,12 @@ const ManageAdminPage: React.FC = () => {
           enrollment_size: 0,
           course_staff_size: 0,
           calendar_link: calendarLink || null
-        },
-        { withCredentials: true }
-      ).catch(err => {
+        }, {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              },
+              withCredentials: true,
+      }).catch(err => {
         if (err.response?.status !== 409) throw err;
       });
 
@@ -93,9 +101,12 @@ const ManageAdminPage: React.FC = () => {
         {
           net_id: netId.trim(),
           course_id
-        },
-        { withCredentials: true }
-      );
+        }, {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              },
+              withCredentials: true,
+        });
 
       setNetId('');
       setCourseCode('');
@@ -140,10 +151,14 @@ const ManageAdminPage: React.FC = () => {
                     <button
                       onClick={async () => {
                         try {
+                          const token = localStorage.getItem('jwtToken');
                           await axios.delete(
-                            `${API_ENDPOINTS.BACKEND_URL}/admin/${admin.net_id}/${admin.course_id}`,
-                            { withCredentials: true }
-                          );
+                            `${API_ENDPOINTS.BACKEND_URL}/admin/${admin.net_id}/${admin.course_id}`, {
+                              headers: {
+                                  'Authorization': `Bearer ${token}`
+                              },
+                              withCredentials: true,
+                        });
                           fetchAdmins();
                         } catch (err: any) {
                           console.error('Delete failed:', err);

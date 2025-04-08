@@ -8,6 +8,7 @@ queue_entry_bp = Blueprint("queue_entry", __name__)
 
 # GET: Get all the queue entries within a Queue
 @queue_entry_bp.route("/queue/course/<course_id>/entries", methods=["GET"])
+@roles_required(['instructor', 'ULA'])
 def get_all_queue_entries_for_course(course_id):
     """Fetches all queue entries for a course."""
     mode = request.args.get("mode")  # optional query parameter
@@ -71,6 +72,7 @@ def get_active_queue_entries_for_course(course_id):
 
 # GET: Fetch queue entries for a student in a specific course
 @queue_entry_bp.route("/queue/course/<course_id>/person/<net_id>", methods=["GET"])
+@roles_required(['instructor', 'ULA'])
 def get_queue_by_student_in_course(course_id, net_id):
     # Verify that the person exists
     person = Person.query.get(net_id)
@@ -110,6 +112,7 @@ def get_queue_by_student_in_course(course_id, net_id):
 
 # POST: Add a student to the queue
 @queue_entry_bp.route("/queue/course/<course_id>/add", methods=["POST"])
+@roles_required(['instructor', 'ULA', 'student'])
 def add_to_queue(course_id):
     # Ensure Queue Exists
     queue = Queue.query.filter_by(course_id=course_id).first()
@@ -160,6 +163,7 @@ def add_to_queue(course_id):
 
 # PATCH: Complete queue entry (Set to "Completed")
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/complete", methods=["PATCH"])
+@roles_required(['instructor', 'ULA'])
 def complete_queue_entry(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -176,6 +180,7 @@ def complete_queue_entry(queue_entry_id):
 
 # PATCH: Assign a ULA to a queue entry and set to in progress
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/assign", methods=["PATCH"])
+@roles_required(['instructor', 'ULA'])
 def assign_ula(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -206,6 +211,7 @@ def assign_ula(queue_entry_id):
 
 # PATCH: Edit Topic Name
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/topic", methods=["PATCH"])
+@roles_required(['instructor', 'ULA', 'student'])
 def update_topic_name(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -225,6 +231,7 @@ def update_topic_name(queue_entry_id):
 
 # PATCH: Edit Zoom Link
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/zoom", methods=["PATCH"])
+@roles_required(['instructor', 'ULA', 'student'])
 def update_zoom_link(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -244,6 +251,7 @@ def update_zoom_link(queue_entry_id):
 
 # DELETE: Remove Zoom Link (Reset to Empty String / NULL)
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/zoom", methods=["DELETE"])
+@roles_required(['instructor', 'ULA', 'student'])
 def delete_zoom_link(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -259,6 +267,7 @@ def delete_zoom_link(queue_entry_id):
 
 # DELETE: Clear all queue entries for a Queue(Admin use)
 @queue_entry_bp.route("/queue/course/<course_id>/clear", methods=["DELETE"])
+@roles_required(['instructor', 'ULA'])
 def clear_queue_by_course(course_id):
     queue = Queue.query.filter_by(course_id=course_id).first()
     if not queue:
@@ -274,6 +283,7 @@ def clear_queue_by_course(course_id):
 
 # DELETE: Remove a queue entry
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>", methods=["DELETE"])
+@roles_required(['instructor' 'ULA', 'student'])
 def delete_queue_entry(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:

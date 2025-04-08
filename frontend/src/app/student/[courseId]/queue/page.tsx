@@ -36,57 +36,6 @@ const StudentQueuePage: React.FC = () => {
   const [myNetId, setMyNetId] = useState<string>('');
   const socketRef = useRef<Socket | null>(null);
 
-  // useEffect(() => {
-  //   if (!courseId) return;
-  
-  //   socket.emit('join_room', { course_id: courseId });
-  
-  //   socket.on('queue_updated', (data) => {
-  //     setQueueEntries(data.entries);
-  //   });
-  
-  //   socket.on('queue_status_updated', (data) => {
-  //     setQueueActive(data.is_active);
-  //   });
-  
-  //   socket.on('error', (data) => {
-  //     setError(data.message);
-  //   });
-  
-  //   fetchUser();
-  //   fetchQueueStatus();
-  
-  //   return () => {
-  //     socket.off('queue_updated');
-  //     socket.off('queue_status_updated');
-  //     socket.off('error');
-  //   };
-  // }, [courseId]);
-  
-  // useEffect(() => {
-  //   if (!myNetId) return;
-  //   fetchQueueEntries();
-  // }, [myNetId]);
-  
-  // useEffect(() => {
-  //   if (!myNetId) return;
-  
-  //   const myEntry = queueEntries.find((entry) =>
-  //     entry.net_id === myNetId &&
-  //     (entry.status === "In Queue" || entry.status === "In Progress")
-  //   );
-  //   if (myEntry) {
-  //     setMyEntryId(myEntry.queue_entry_id);
-  //   } else {
-  //     setMyEntryId(null);
-  //   }
-  // }, [queueEntries, myNetId]);
-
-  // useEffect(() => {
-  //   if (myNetId) {
-  //     fetchQueueEntries(); // Only after we know who the user is
-  //   }
-  // }, [myNetId]);
    useEffect(() => {
     if (!courseId || !myNetId) return;
 
@@ -100,6 +49,7 @@ const StudentQueuePage: React.FC = () => {
       query: { token },
       transports: ['websocket'],
     });
+     
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -110,7 +60,7 @@ const StudentQueuePage: React.FC = () => {
       setQueueEntries(data.entries);
 
       // update myEntryId on real‑time change
-      const myEntry = data.entries.find(e =>
+      const myEntry = data.entries.find((e: { net_id: string; status: string; }) =>
         e.net_id === myNetId &&
         ['In Queue','In Progress'].includes(e.status)
       );
@@ -160,10 +110,14 @@ const StudentQueuePage: React.FC = () => {
 
   const fetchUser = async () => {
     try {
+      const token = localStorage.getItem('jwtToken');
       const res = await axios.get<{ auth: boolean; user?: User }>(
-        `${API_ENDPOINTS.BACKEND_URL}/check`,
-        { withCredentials: true }
-      );
+        `${API_ENDPOINTS.BACKEND_URL}/check`, {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              },
+              withCredentials: true,
+            });
       if (res.data.auth && res.data.user) {
         setMyNetId(res.data.user.netId);
       }

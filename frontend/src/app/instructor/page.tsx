@@ -56,17 +56,24 @@ const InstructorPage: React.FC = () => {
 
     const fetchCourses = async () => {
       try {
+        const token = localStorage.getItem('jwtToken');
         const adminRes = await axios.get<AdminEntry[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/admins/person/${user.netId}`,
-          { withCredentials: true }
-        );
+          `${API_ENDPOINTS.BACKEND_URL}/admins/person/${user.netId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                withCredentials: true,
+            });
 
         const courseDetails = await Promise.all(
           adminRes.data.map(async (entry) => {
             const courseRes = await axios.get<Course>(
-              `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`,
-              { withCredentials: true }
-            );
+              `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                withCredentials: true,
+            });
             return courseRes.data;
           })
         );

@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify
 from app.models import Course, Student, db, Chat, ChatMessage, Person
+from ..auth import roles_required, login_required
 
 # Create a Blueprint for the ChatMessage routes
 chatmessage_bp = Blueprint("chatmessage", __name__)
 
 # GET: Fetch all chat messages for a specific course (ordered by timestamp)
 @chatmessage_bp.route("/chat/course/<course_id>/messages", methods=["GET"])
+@roles_required(['instructor', 'student', 'ULA'])
 def get_chat_messages(course_id):
     course = Course.query.get(course_id)
     if not course:
@@ -29,6 +31,7 @@ def get_chat_messages(course_id):
 
 # GET: Fetch all chat messages for a specific course by sender (ordered by timestamp)
 @chatmessage_bp.route("/chat/course/<course_id>/person/<net_id>/messages", methods=["GET"])
+@roles_required(['instructor', 'ULA'])
 def get_course_messages_by_person(course_id, net_id):
     course = Course.query.get(course_id)
     if not course:
@@ -62,6 +65,7 @@ def get_course_messages_by_person(course_id, net_id):
 
 # POST: Add a chat message to a course's chat
 @chatmessage_bp.route("/chat/course/<course_id>/message/add", methods=["POST"])
+@roles_required(['instructor', 'student', 'ULA'])
 def add_chat_message(course_id):
     course = Course.query.get(course_id)
     if not course:
@@ -97,6 +101,7 @@ def add_chat_message(course_id):
         return jsonify({"error": str(e)}), 500
 
 # DELETE: Clear all chat messages for a course (Admin use)
+@roles_required(['instructor', 'ULA'])
 @chatmessage_bp.route("/chat/course/<course_id>/clear", methods=["DELETE"])
 def clear_chat_messages(course_id):
     course = Course.query.get(course_id)
@@ -114,6 +119,7 @@ def clear_chat_messages(course_id):
 
 # DELETE: Delete a specific chat message by its ID (Admin use)
 @chatmessage_bp.route("/chat/message/<int:chat_message_id>", methods=["DELETE"])
+@roles_required(['instructor', 'ULA'])
 def delete_chat_message(chat_message_id):
     message = ChatMessage.query.get(chat_message_id)
     if not message:

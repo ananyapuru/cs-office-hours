@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, Admin, Person, Course
+from ..auth import roles_required, login_required
 
 # Create a Blueprint for the Admin routes
 admin_bp = Blueprint("admin", __name__)
 
 # GET: Fetch all Admins
 @admin_bp.route("/admins", methods=["GET"])
+@login_required
 def get_all_admins():
     admins = Admin.query.all()
     return jsonify([
@@ -17,6 +19,7 @@ def get_all_admins():
 
 # GET: Fetch Admins by CourseID
 @admin_bp.route("/admins/course/<course_id>", methods=["GET"])
+@login_required
 def get_admins_by_course(course_id):
     admins = Admin.query.filter_by(course_id=course_id).all()
     if not admins:
@@ -31,6 +34,7 @@ def get_admins_by_course(course_id):
 
 # GET: Fetch courses Admins are assigned to by NetID
 @admin_bp.route("/admins/person/<net_id>", methods=["GET"])
+@login_required
 def get_admins_by_netid(net_id):
     admins = Admin.query.filter_by(net_id=net_id).all()
     if not admins:
@@ -45,6 +49,7 @@ def get_admins_by_netid(net_id):
 
 # POST: Assign an Admin to a course
 @admin_bp.route("/admin", methods=["POST"])
+@roles_required(['instructor'])
 def assign_admin():
     data = request.json
 
@@ -83,6 +88,7 @@ def assign_admin():
 
 # DELETE: Remove an Admin from a course
 @admin_bp.route("/admin/<net_id>/<course_id>", methods=["DELETE"])
+@roles_required(['instructor'])
 def unassign_admin(net_id, course_id):
     admin = Admin.query.get((net_id, course_id))
     if not admin:

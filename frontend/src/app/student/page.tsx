@@ -35,10 +35,14 @@ const StudentPage: React.FC = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        const token = localStorage.getItem('jwtToken');
         const res = await axios.get<{ auth: boolean; user?: User }>(
-          `${API_ENDPOINTS.BACKEND_URL}/check`,
-          { withCredentials: true }
-        );
+          `${API_ENDPOINTS.BACKEND_URL}/check`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                withCredentials: true,
+            });
         if (res.data.auth && res.data.user) {
           setUser(res.data.user);
         }
@@ -55,17 +59,24 @@ const StudentPage: React.FC = () => {
 
     const fetchStudentCourses = async () => {
       try {
+        const token = localStorage.getItem('jwtToken');
         const studentRes = await axios.get<StudentEntry[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/students/person/${user.netId}`,
-          { withCredentials: true }
-        );
+          `${API_ENDPOINTS.BACKEND_URL}/students/person/${user.netId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                withCredentials: true,
+            });
 
         const courseDetails = await Promise.all(
           studentRes.data.map(async (entry) => {
             const courseRes = await axios.get<Course>(
-              `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`,
-              { withCredentials: true }
-            );
+              `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`, {
+                  headers: {
+                      'Authorization': `Bearer ${token}`
+                  },
+                  withCredentials: true,
+            });
             return courseRes.data;
           })
         );

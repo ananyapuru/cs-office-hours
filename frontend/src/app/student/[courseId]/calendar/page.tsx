@@ -20,10 +20,14 @@ const StudentCalendarPage: React.FC = () => {
   useEffect(() => {
     const fetchCalendar = async () => {
       try {
+        const token = localStorage.getItem('jwtToken');
         const res = await axios.get<Course>(
-          `${API_ENDPOINTS.BACKEND_URL}/course/${courseId}`,
-          { withCredentials: true }
-        );
+          `${API_ENDPOINTS.BACKEND_URL}/course/${courseId}`, {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              },
+              withCredentials: true,
+            });
         setCalendarLink(res.data.calendar_link || null);
       } catch (err) {
         console.error('Error fetching calendar link:', err);
