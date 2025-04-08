@@ -25,12 +25,15 @@ def roles_required(required_roles):
             # 2) your roles map now holds lists
             roles_map = payload.get('roles', {})
             course_id = kwargs.get('course_id')
+            if not course_id:
+                data = request.get_json(silent=True) or {}
+                course_id = data.get('course_id')
             # get the list of roles (or empty list)
             user_roles_for_course = roles_map.get(course_id, [])
 
             # check intersection
             if not any(r in required_roles for r in user_roles_for_course):
-                return jsonify(error='Forbidden: Insufficient role'), 403
+                return jsonify(error=f'Forbidden: Insufficient role, needed {required_roles}'), 403
 
             # stash the user
             request.user = {'net_id': netid, 'roles': roles_map}

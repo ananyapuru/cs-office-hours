@@ -28,9 +28,13 @@ const ManageStudentsPage: React.FC = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
+        const token = localStorage.getItem('jwtToken');
         const res = await axios.get(`${API_ENDPOINTS.BACKEND_URL}/course/${courseId}/students`, {
-          withCredentials: true,
-        });
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
         setStudents(res.data);
       } catch (err) {
         console.error('Error fetching students:', err);
@@ -44,7 +48,11 @@ const ManageStudentsPage: React.FC = () => {
 
   const handleDelete = async (net_id: string) => {
     try {
+      const token = localStorage.getItem('jwtToken');
       await axios.delete(`${API_ENDPOINTS.BACKEND_URL}/student/${net_id}/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         withCredentials: true,
       });
       setStudents((prev) => prev.filter((s) => s.net_id !== net_id));
@@ -61,13 +69,22 @@ const ManageStudentsPage: React.FC = () => {
     }
 
     try {
+      const token = localStorage.getItem('jwtToken');
       await axios.post(`${API_ENDPOINTS.BACKEND_URL}/enroll-via-yalies`, {
         net_id: netId.trim(),
         course_id: courseId,
-      }, { withCredentials: true });
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
 
       setNetId('');
       const res = await axios.get(`${API_ENDPOINTS.BACKEND_URL}/course/${courseId}/students`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         withCredentials: true,
       });
       setStudents(res.data);
@@ -83,14 +100,19 @@ const ManageStudentsPage: React.FC = () => {
     formData.append('file', file);
 
     try {
+      const token = localStorage.getItem('jwtToken');
       await axios.post(`${API_ENDPOINTS.BACKEND_URL}/upload-roster/${courseId}`, formData, {
         withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
       const res = await axios.get(`${API_ENDPOINTS.BACKEND_URL}/course/${courseId}/students`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         withCredentials: true,
       });
       setStudents(res.data);

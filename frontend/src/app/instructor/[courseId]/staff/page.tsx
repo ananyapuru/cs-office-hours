@@ -24,17 +24,24 @@ const ManageStaffPage: React.FC = () => {
   useEffect(() => {
     const fetchStaff = async () => {
       try {
+        const token = localStorage.getItem('jwtToken');
         const ulaRes = await axios.get<{ net_id: string }[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/ulas/course/${courseId}`,
-          { withCredentials: true }
-        );
+          `${API_ENDPOINTS.BACKEND_URL}/ulas/course/${courseId}`, {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              },
+              withCredentials: true,
+            });
 
         const detailedStaff = await Promise.all(
           ulaRes.data.map(async (entry) => {
             const personRes = await axios.get<{ first_name: string; last_name: string; yale_email: string }>(
-              `${API_ENDPOINTS.BACKEND_URL}/person/${entry.net_id}`,
-              { withCredentials: true }
-            );
+              `${API_ENDPOINTS.BACKEND_URL}/person/${entry.net_id}`, {
+                  headers: {
+                      'Authorization': `Bearer ${token}`
+                  },
+                  withCredentials: true,
+            });
             return {
               net_id: entry.net_id,
               first_name: personRes.data.first_name,
@@ -55,9 +62,9 @@ const ManageStaffPage: React.FC = () => {
     fetchStaff();
   }, [courseId]);
 
-  const token = localStorage.getItem('jwtToken');
   const handleDelete = async (net_id: string) => {
     try {
+      const token = localStorage.getItem('jwtToken');
       await axios.delete(`${API_ENDPOINTS.BACKEND_URL}/ula/${net_id}/${courseId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -78,24 +85,36 @@ const ManageStaffPage: React.FC = () => {
     }
 
     try {
+      const token = localStorage.getItem('jwtToken');
       await axios.post(`${API_ENDPOINTS.BACKEND_URL}/ula`, {
         net_id: netId.trim(),
         course_id: courseId,
-      }, { withCredentials: true });
-
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
       setNetId('');
       // Refresh staff list
       const ulaRes = await axios.get<{ net_id: string }[]>(
-        `${API_ENDPOINTS.BACKEND_URL}/ulas/course/${courseId}`,
-        { withCredentials: true }
-      );
+        `${API_ENDPOINTS.BACKEND_URL}/ulas/course/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
 
       const detailedStaff = await Promise.all(
         ulaRes.data.map(async (entry) => {
           const personRes = await axios.get<{ first_name: string; last_name: string; yale_email: string }>(
-            `${API_ENDPOINTS.BACKEND_URL}/person/${entry.net_id}`,
-            { withCredentials: true }
-          );
+            `${API_ENDPOINTS.BACKEND_URL}/person/${entry.net_id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            withCredentials: true,
+          });
           return {
             net_id: entry.net_id,
             first_name: personRes.data.first_name,
