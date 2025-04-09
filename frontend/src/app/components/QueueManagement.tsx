@@ -8,7 +8,11 @@ import { useParams, useRouter } from 'next/navigation';
 import SignOutButton from '@/app/components/SignOutButton';
 import { formatCourseId } from '@/app/utils/formatters';
 
-// const socket = io(API_ENDPOINTS.BACKEND_URL);
+interface User {
+  netId: string;
+  firstName?: string;
+  lastName?: string;
+}
 
 interface QueueEntry {
     queue_entry_id: number;
@@ -31,6 +35,8 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
     const [queueActive, setQueueActive] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const socketRef = useRef<Socket | null>(null);
+    const [user, setUser] = useState<User | null>(null);
+
 
     // Function to fetch queue entries via your active entries endpoint
     const fetchQueueEntries = async () => {
@@ -50,32 +56,6 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
         }
     };
 
-    // useEffect(() => {
-    //     if (!courseId) return;
-
-    //     socket.emit('join_room', { course_id: courseId });
-
-    //     socket.on('queue_updated', (data) => {
-    //         setQueueEntries(data.entries);
-    //     });
-
-    //     socket.on('queue_status_updated', (data) => {
-    //         setQueueActive(data.is_active); // 🛠 Update instantly when queue status changes
-    //     });
-
-    //     socket.on('error', (data) => {
-    //         setError(data.message);
-    //     });
-
-    //     fetchQueueStatus();
-    //     fetchQueueEntries();
-
-    //     return () => {
-    //         socket.off('queue_updated');
-    //         socket.off('queue_status_updated'); // 🛠 Clean up
-    //         socket.off('error');
-    //     };
-    // }, [courseId]);
     useEffect(() => {
         if (!courseId) return;
         const token = localStorage.getItem('jwtToken');
@@ -83,6 +63,19 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
         setError('Not authenticated');
         return;
         }
+        const fetchUser = async () => {
+        try {
+            const res = await axios.get<{ auth: boolean; user?: User }>(
+                `${API_ENDPOINTS.BACKEND_URL}/check`,
+                { withCredentials: true }
+            );
+            if (res.data.auth && res.data.user) {
+                setUser(res.data.user);
+            }
+            } catch (error) {
+                console.error('Error fetching user:', error);
+            }
+        };
 
         // 1) Create socket with token in query
         const socket = io(API_ENDPOINTS.BACKEND_URL, {
@@ -113,6 +106,7 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
         });
 
         // Fetch initial state
+        fetchUser();
         fetchQueueStatus();
         fetchQueueEntries();
 
@@ -160,12 +154,16 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
     };
 
     const handleStatusChange = (entryId: number, newStatus: string) => {
-        const staffNetId = "jz775"; // TODO: Change this to the actual netid after we implement tokens
+        //const staffNetId = "jz775"; // TODO: Change this to the actual netid after we implement tokens
+        if (!user) {
+            setError('User not loaded');
+            return;
+        }
         emit('staff_update_entry', {
             course_id: courseId,
             queue_entry_id: entryId,
             new_status: newStatus,
-            staff_net_id: staffNetId,
+            staff_net_id: user.netId,
         });
     };
 
