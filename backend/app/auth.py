@@ -1,5 +1,5 @@
 import jwt
-from flask import request, jsonify, current_app, request
+from flask import request, jsonify, current_app
 from functools import wraps
 from flask_socketio import emit
 

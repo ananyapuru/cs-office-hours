@@ -291,9 +291,9 @@ class QueueEntry(db.Model):
     )
 
     # Timing Metrics
-    time_entered = db.Column(db.DateTime, nullable=False, server_default=func.now())  # When student joined queue
-    time_started = db.Column(db.DateTime, nullable=True)  # When ULA started helping
-    time_finished = db.Column(db.DateTime, nullable=True)  # When ULA finished helping
+    time_entered = db.Column(db.DateTime(timezone = True), nullable=False, server_default=func.now())  # When student joined queue
+    time_started = db.Column(db.DateTime(timezone = True), nullable=True)  # When ULA started helping
+    time_finished = db.Column(db.DateTime(timezone = True), nullable=True)  # When ULA finished helping
 
     # Relationships (Eager Loading for performance)
     # Using lazy="joined" here since when fetching queue entries, we often need the associated person and ULA details.
@@ -313,6 +313,9 @@ class QueueEntry(db.Model):
 
     # Unique Constraint: Prevent multiple active entries by only allowing one "In Queue" or "In Progress" entry at a time
     __table_args__ = (
+        Index('idx_queue_entry_time_entered', 'time_entered'),
+        Index('idx_queue_entry_time_started', 'time_started'),
+        Index('idx_queue_entry_time_finished', 'time_finished'),
         Index(
             "unique_active_queue_entry",
             "net_id",
