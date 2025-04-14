@@ -49,7 +49,7 @@ def get_admins_by_netid(net_id):
 
 # POST: Assign an Admin to a course
 @admin_bp.route("/admin", methods=["POST"])
-@roles_required(['instructor'])
+@login_required
 def assign_admin():
     data = request.json
 
