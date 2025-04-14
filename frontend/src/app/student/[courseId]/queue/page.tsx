@@ -6,6 +6,7 @@ import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import SignOutButton from '@/app/components/SignOutButton';
 import { API_ENDPOINTS } from '@/app/constants';
+import ChatBox from '@/app/components/Chat'; 
 
 // const socket = io(API_ENDPOINTS.BACKEND_URL);
 
@@ -35,6 +36,11 @@ const StudentQueuePage: React.FC = () => {
   const [myEntryId, setMyEntryId] = useState<number | null>(null);
   const [myNetId, setMyNetId] = useState<string>('');
   const socketRef = useRef<Socket | null>(null);
+  const [showChat, setShowChat] = useState(false);
+
+  const toggleChat = () => {
+    setShowChat((prev) => !prev);
+  };
 
    useEffect(() => {
     if (!courseId || !myNetId) return;
@@ -198,6 +204,21 @@ const StudentQueuePage: React.FC = () => {
     <div className="min-h-screen bg-[#0e1c2c] text-white p-6 flex flex-col items-center relative">
       <div className="absolute top-4 right-6">
         <SignOutButton />
+      </div>
+
+      <div className="w-full max-w-4xl mb-6">
+        <button
+          onClick={toggleChat}
+          className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          {showChat ? 'Hide Chat' : 'Show Chat'}
+        </button>
+
+        {showChat && (
+          <div className="bg-gray-800 p-4 rounded-lg">
+            <ChatBox courseId={courseId} />
+          </div>
+        )}
       </div>
 
       <h1 className="text-4xl font-bold mb-6">Course Queue for {courseId}</h1>
