@@ -42,8 +42,8 @@ def fetch_chat_messages_for_course(course_id):
     return [{
         'chat_message_id': m.chat_message_id,
         'net_id': m.net_id,
-        # 'first_name': m.person.first_name,
-        # 'last_name': m.person.last_name,
+        'first_name': m.person.first_name,
+        'last_name': m.person.last_name,
         'message': m.message,
         'time_sent': m.time_sent.isoformat()
     } for m in messages]
