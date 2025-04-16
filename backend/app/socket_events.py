@@ -301,3 +301,33 @@ def register_socket_events(socketio):
 
         messages = fetch_chat_messages_for_course(course_id)
         emit('chat_updated', {'messages': messages})
+
+
+
+    @socketio.on('staff_delete_message')
+
+    @socket_roles_required(required_roles=['instructor', 'ULA', 'admin'])
+    def handle_staff_delete_message(data):
+        course_id = data.get('course_id')
+        chat_message_id = data.get('chat_message_id')
+
+        if not course_id or not chat_message_id:
+            emit('error', {'message': 'Missing course_id or chat_message_id'})
+            return
+
+        # Find the message
+        message = ChatMessage.query.get(chat_message_id)
+        if not message:
+            emit('error', {'message': 'Message not found'})
+            return
+
+        # Confirm it belongs to the right course
+        if message.chat.course_id != course_id:
+            emit('error', {'message': 'Invalid course context'})
+            return
+
+        db.session.delete(message)
+        db.session.commit()
+
+        # Broadcast updated messages
+        broadcast_chat_update(course_id)

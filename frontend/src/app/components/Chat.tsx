@@ -104,7 +104,7 @@ const fetchChatMessages = async () => {
         {messages.map((msg) => (
           <div key={msg.chat_message_id}>
             <span className="font-medium">{msg.first_name} {msg.last_name}</span>: {msg.message}
-            <div className="text-xs text-gray-400">{new Date(msg.time_sent).toLocaleTimeString()}</div>
+            <div className="text-xs text-gray-400">{new Date(msg.time_sent).toLocaleString()}</div>
           </div>
         ))}
       </div>

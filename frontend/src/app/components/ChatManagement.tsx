@@ -93,18 +93,37 @@ const ChatManagement: React.FC<ChatManagementProps> = ({ courseId }) => {
     });
     setNewMessage('');
   };
+    
+    const handleDeleteMessage = (chatMessageId: number) => {
+    if (!socketRef.current) return;
+
+    socketRef.current.emit('staff_delete_message', {
+        course_id: courseId,
+        chat_message_id: chatMessageId,
+    });
+};
 
   return (
-    <div className="w-full max-w-3xl p-4 bg-[#1e2b3a] text-white rounded-xl">
+    <div className="w-full bg-gray-900 p-4 rounded-lg text-white">
       <h2 className="text-2xl font-bold mb-4">Course Chat (Staff View)</h2>
       {error && <p className="text-red-500">{error}</p>}
 
-      <div className="max-h-80 overflow-y-auto bg-[#111827] p-3 rounded mb-4 space-y-2">
+      <div className="h-60 overflow-y-auto bg-gray-800 p-3 rounded mb-3 space-y-2">
         {messages.map((msg) => (
-          <div key={msg.chat_message_id}>
+        <div key={msg.chat_message_id} className="flex justify-between items-start gap-4">
+            <div>
             <span className="font-semibold">{msg.first_name} {msg.last_name}</span>: {msg.message}
             <div className="text-xs text-gray-400">{new Date(msg.time_sent).toLocaleString()}</div>
-          </div>
+            </div>
+
+            {/* DELETE BUTTON */}
+            <button
+            onClick={() => handleDeleteMessage(msg.chat_message_id)}
+            className="text-red-400 hover:text-red-600 text-sm"
+            >
+            Delete
+            </button>
+        </div>
         ))}
       </div>
 
