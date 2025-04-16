@@ -1,5 +1,5 @@
 import jwt
-from flask import request, jsonify, current_app, request
+from flask import request, jsonify, current_app, session
 from functools import wraps
 from flask_socketio import emit
 
@@ -22,6 +22,15 @@ def roles_required(required_roles):
 
             # 1) correct netid key
             netid = payload.get('netid')
+
+            # ENFORCE CORRECT NETID
+            correct_netid = session.get('CAS_USERNAME')
+            if not correct_netid:
+                return jsonify({'auth': False})
+            
+            if correct_netid != netid:
+                return jsonify(error='Incorrect Netid in Token'), 401
+
             # 2) your roles map now holds lists
             roles_map = payload.get('roles', {})
             course_id = kwargs.get('course_id')
@@ -47,6 +56,14 @@ def socket_roles_required(required_roles, course_id_key='course_id'):
         @wraps(f)
         def decorated(*args, **kwargs):
             user = request.environ.get('user', {})
+
+            # ENFORCE CORRECT NETID
+            netid = user.get('net_id')
+            session_netid = session.get('CAS_USERNAME')
+            if not session_netid or session_netid != netid:
+                emit('error', {'message': 'Session identity mismatch'})
+                return
+            
             roles_map = user.get('roles', {})
             data = args[0] if args else {}
             course_id = data.get(course_id_key)
@@ -80,6 +97,15 @@ def login_required(f):
             return jsonify(error='Invalid token'), 401
 
         request.user = payload.get('netid')
+
+        # ENFORCE CORRECT NETID
+        correct_netid = session.get('CAS_USERNAME')
+        if not correct_netid:
+            return jsonify({'auth': False})
+        
+        if correct_netid != request.user:
+            return jsonify(error='Incorrect Netid in Token'), 401
+        
         return f(*args, **kwargs)
     return decorated
 
