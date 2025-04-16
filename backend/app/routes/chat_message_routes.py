@@ -15,7 +15,9 @@ def get_chat_messages(course_id):
     
     chat = Chat.query.filter_by(course_id=course_id).first()
     if not chat:
-        return jsonify({"error": f"Chat for course {course_id} not found"}), 404
+        chat = Chat(course_id = course_id)
+        db.session.add(chat)
+        db.session.commit()     
 
     messages = ChatMessage.query.filter_by(chat_id=chat.chat_id).order_by(ChatMessage.time_sent).all()
 
