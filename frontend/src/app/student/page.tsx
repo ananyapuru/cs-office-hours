@@ -35,14 +35,10 @@ const StudentPage: React.FC = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const token = localStorage.getItem('jwtToken');
         const res = await axios.get<{ auth: boolean; user?: User }>(
-          `${API_ENDPOINTS.BACKEND_URL}/check`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                withCredentials: true,
-            });
+          `${API_ENDPOINTS.BACKEND_URL}/check`,
+          { withCredentials: true }
+        );
         if (res.data.auth && res.data.user) {
           setUser(res.data.user);
         }
@@ -61,7 +57,7 @@ const StudentPage: React.FC = () => {
       try {
         const token = localStorage.getItem('jwtToken');
         const studentRes = await axios.get<StudentEntry[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/students/person/${user.netId}`, {
+          `${API_ENDPOINTS.BACKEND_URL}/students/person`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },

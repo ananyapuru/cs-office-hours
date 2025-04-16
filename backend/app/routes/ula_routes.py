@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from app.models import db, ULA, Person, Course
 from ..auth import roles_required, login_required
 
@@ -37,9 +37,13 @@ def get_ulas_by_course(course_id):
     ]), 200
 
 # GET: Fetch courses ULAs are teaching by NetID
-@ula_bp.route("/ulas/person/<net_id>", methods=["GET"])
+@ula_bp.route("/ulas/person", methods=["GET"])
 @login_required
-def get_ulas_by_netid(net_id):
+def get_ulas_by_netid():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
+    
     ulas = ULA.query.filter_by(net_id=net_id).all()
     if not ulas:
         return jsonify({"error": f"No courses found for ULA {net_id}"}), 404
@@ -126,7 +130,7 @@ def replace_ula_feedback(net_id, course_id):
 
 # PATCH: Append new feedback messages
 @ula_bp.route("/ula/<net_id>/<course_id>/feedback", methods=["PATCH"])
-@roles_required(['student', 'instructor', 'ULA'])
+@roles_required(['student', 'instructor'])
 def append_ula_feedback(net_id, course_id):
     ula = ULA.query.get((net_id, course_id))
     if not ula:

@@ -109,7 +109,7 @@ def delete_course(course_id):
     db.session.commit()
     return jsonify({"message": f"Course {course_id} was deleted successfully"}), 200
 
-
+# GET: Get all the students in the a course
 @course_bp.route("/course/<course_id>/students", methods=["GET"])
 def get_students_for_course(course_id):
     students = Student.query.filter_by(course_id=course_id).all()

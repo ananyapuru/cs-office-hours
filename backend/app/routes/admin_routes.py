@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from app.models import db, Admin, Person, Course
 from ..auth import roles_required, login_required
 
@@ -33,9 +33,12 @@ def get_admins_by_course(course_id):
     ]), 200
 
 # GET: Fetch courses Admins are assigned to by NetID
-@admin_bp.route("/admins/person/<net_id>", methods=["GET"])
+@admin_bp.route("/admins/person", methods=["GET"])
 @login_required
-def get_admins_by_netid(net_id):
+def get_admins_by_netid():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
     admins = Admin.query.filter_by(net_id=net_id).all()
     if not admins:
         return jsonify({"error": f"No courses found for Admin {net_id}"}), 404

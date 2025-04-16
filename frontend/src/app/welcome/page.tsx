@@ -89,7 +89,7 @@ const WelcomePage: React.FC = () => {
     const fetchRoles = async () => {
       try {
         const res = await axios.get<Roles>(
-          `${API_ENDPOINTS.BACKEND_URL}/person/${user.netId}/roles`,
+          `${API_ENDPOINTS.BACKEND_URL}/person/roles`,
           { withCredentials: true }
         );
         setRoles(res.data);

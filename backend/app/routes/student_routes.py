@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from app.models import db, Student, Person, Course
 from app.utils import fetch_from_yalies
 from ..auth import roles_required, login_required
@@ -36,9 +36,13 @@ def get_students_by_course(course_id):
     ]), 200
 
 # GET: Fetch courses students are enrolled in by NetID
-@student_bp.route("/students/person/<net_id>", methods=["GET"])
+@student_bp.route("/students/person", methods=["GET"])
 @login_required
-def get_students_by_netid(net_id):
+def get_students_by_netid():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
+    
     students = Student.query.filter_by(net_id=net_id).all()
     if not students:
         return jsonify({"error": f"No courses found for student {net_id}"}), 404
@@ -143,7 +147,7 @@ def append_student_feedback(net_id, course_id):
 
 # PATCH: Edit specific feedback message by index
 @student_bp.route("/student/<net_id>/<course_id>/feedback/<int:index>", methods=["PATCH"])
-@roles_required(['instructor', 'ULA'])
+@roles_required(['instructor'])
 def edit_student_feedback(net_id, course_id, index):
     student = Student.query.get((net_id, course_id))
     if not student:
@@ -165,7 +169,7 @@ def edit_student_feedback(net_id, course_id, index):
 
 # DELETE: Remove specific feedback message by index
 @student_bp.route("/student/<net_id>/<course_id>/feedback/<int:index>", methods=["DELETE"])
-@roles_required(['instructor', 'ULA'])
+@roles_required(['instructor'])
 def delete_student_feedback_entry(net_id, course_id, index):
     student = Student.query.get((net_id, course_id))
     if not student:
@@ -181,7 +185,7 @@ def delete_student_feedback_entry(net_id, course_id, index):
 
 # DELETE: Clear all feedback messages
 @student_bp.route("/student/<net_id>/<course_id>/feedback", methods=["DELETE"])
-@roles_required(['instructor', 'ULA'])
+@roles_required(['instructor'])
 def clear_student_feedback(net_id, course_id):
     student = Student.query.get((net_id, course_id))
     if not student:

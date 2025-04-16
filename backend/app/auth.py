@@ -80,7 +80,7 @@ def socket_roles_required(required_roles, course_id_key='course_id'):
         return decorated
     return decorator
 
-# Only check if netid is in the token (for routes that don't need a specific per role check)
+# Enforces that the netid in the token matches the netid provided by CAS
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):

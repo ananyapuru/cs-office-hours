@@ -58,7 +58,7 @@ const TeachingStaffPage: React.FC = () => {
       try {
         const token = localStorage.getItem('jwtToken');
         const ulaRes = await axios.get<ULAEntry[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/ulas/person/${user.netId}`, {
+          `${API_ENDPOINTS.BACKEND_URL}/ulas/person`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
