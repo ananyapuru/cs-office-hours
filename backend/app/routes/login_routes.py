@@ -1,5 +1,7 @@
 # backend/app/routes.py
 import os
+import jwt
+import datetime
 from flask import Blueprint, session, jsonify, redirect, current_app
 from flask_cas import logout as cas_logout
 from ..utils import get_welcome_message, fetch_from_yalies
@@ -83,3 +85,44 @@ def my_logout():
     
     # Apparently, the CAS server expects a "service" parameter which == the URL to redirect to after CAS logout.
     return redirect(f"{cas_server}/logout?service={frontend_url}/goodbye")
+
+# generate JWT
+@login_bp.route('/token')
+def generate_token():
+    username = session.get('CAS_USERNAME')
+    if not username:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    # Get the user's record from the database
+    person = Person.query.filter_by(net_id=username).first()
+    if not person:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Build a dictionary mapping course IDs to roles
+    roles = {}
+
+    # Populate token with roles
+    def add_role(course_id, role):
+        roles.setdefault(course_id, []).append(role)
+
+    for s in person.students:
+        add_role(s.course_id, "student")
+    for u in person.ulas:
+        add_role(u.course_id, "ULA")
+    for a in person.admins:
+        add_role(a.course_id, "instructor")
+
+    # Create the payload, set expiration time = 
+    payload = {
+        'netid': username,
+        'roles': roles,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    }
+
+    # hash
+    token = jwt.encode(payload, current_app.secret_key, algorithm='HS256')
+
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+    
+    return jsonify({'token': token})

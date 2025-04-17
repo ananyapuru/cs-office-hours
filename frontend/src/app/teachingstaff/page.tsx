@@ -56,17 +56,24 @@ const TeachingStaffPage: React.FC = () => {
 
     const fetchULACourses = async () => {
       try {
+        const token = localStorage.getItem('jwtToken');
         const ulaRes = await axios.get<ULAEntry[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/ulas/person/${user.netId}`,
-          { withCredentials: true }
-        );
+          `${API_ENDPOINTS.BACKEND_URL}/ulas/person`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                withCredentials: true,
+            });
 
         const courseDetails = await Promise.all(
           ulaRes.data.map(async (entry) => {
             const courseRes = await axios.get<Course>(
-              `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`,
-              { withCredentials: true }
-            );
+              `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`, {
+                  headers: {
+                      'Authorization': `Bearer ${token}`
+                  },
+                  withCredentials: true,
+            });
             return courseRes.data;
           })
         );
@@ -120,7 +127,7 @@ const TeachingStaffPage: React.FC = () => {
                   <td className="px-6 py-3 space-y-2 flex flex-col">
                     <button
                       className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
-                      onClick={() => router.push(`/student/${course.course_id}/queue`)}
+                      onClick={() => router.push(`/teachingstaff/${course.course_id}/queue`)}
                     >
                       View Queue
                     </button>

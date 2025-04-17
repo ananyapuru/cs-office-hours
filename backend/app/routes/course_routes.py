@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, Course, Person, Student
+from ..auth import roles_required, login_required
 
 course_bp = Blueprint("course", __name__)
 
 # GET: Fetch all courses
 @course_bp.route("/course", methods=["GET"])
+@login_required
 def get_all_courses():
     courses = Course.query.all()
     return jsonify([
@@ -20,6 +22,7 @@ def get_all_courses():
 
 # GET: Fetch a single course by CourseID
 @course_bp.route("/course/<course_id>", methods=["GET"])
+@login_required
 def get_course(course_id):
     course = Course.query.get(course_id)
     if not course:
@@ -35,6 +38,7 @@ def get_course(course_id):
 
 # POST: Create a new course
 @course_bp.route("/course", methods=["POST"])
+@login_required
 def create_course():
     data = request.json
 
@@ -69,6 +73,7 @@ def create_course():
 
 # PUT: Update an existing course
 @course_bp.route("/course/<course_id>", methods=["PUT"])
+@roles_required(['instructor'])
 def update_course(course_id):
     course = Course.query.get(course_id)
     if not course:
@@ -94,6 +99,7 @@ def update_course(course_id):
 
 # DELETE: Remove a course from the database
 @course_bp.route("/course/<course_id>", methods=["DELETE"])
+@roles_required(['instructor'])
 def delete_course(course_id):
     course = Course.query.get(course_id)
     if not course:
@@ -103,7 +109,7 @@ def delete_course(course_id):
     db.session.commit()
     return jsonify({"message": f"Course {course_id} was deleted successfully"}), 200
 
-
+# GET: Get all the students in the a course
 @course_bp.route("/course/<course_id>/students", methods=["GET"])
 def get_students_for_course(course_id):
     students = Student.query.filter_by(course_id=course_id).all()

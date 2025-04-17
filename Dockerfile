@@ -23,4 +23,4 @@ ENV FLASK_RUN_PORT=5002
 
 
 # Run
-CMD ["flask", "run"]
+CMD ["python", "backend/app.py"]

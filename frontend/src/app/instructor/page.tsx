@@ -56,17 +56,24 @@ const InstructorPage: React.FC = () => {
 
     const fetchCourses = async () => {
       try {
+        const token = localStorage.getItem('jwtToken');
         const adminRes = await axios.get<AdminEntry[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/admins/person/${user.netId}`,
-          { withCredentials: true }
-        );
+          `${API_ENDPOINTS.BACKEND_URL}/admins/person`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                withCredentials: true,
+            });
 
         const courseDetails = await Promise.all(
           adminRes.data.map(async (entry) => {
             const courseRes = await axios.get<Course>(
-              `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`,
-              { withCredentials: true }
-            );
+              `${API_ENDPOINTS.BACKEND_URL}/course/${entry.course_id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                withCredentials: true,
+            });
             return courseRes.data;
           })
         );
@@ -134,6 +141,12 @@ const InstructorPage: React.FC = () => {
                         onClick={() => router.push(`/instructor/${course.course_id}/staff`)}
                       >
                         Manage Staff
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
+                        onClick={() => router.push(`/instructor/${course.course_id}/queue`)}
+                      >
+                        View Queue
                       </button>
                     </div>
                   </td>

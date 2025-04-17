@@ -3,15 +3,19 @@
 # In Python 2, basestring was a built‑in type that served as a common base class for str and unicode
 import builtins
 import os
+from flask_socketio import SocketIO
 
 if not hasattr(builtins, 'basestring'):
     builtins.basestring = str
     
 from app import create_app
+from app.socket_events import register_socket_events
 
 app = create_app()
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+register_socket_events(socketio)
 
 PORT = int(os.getenv('PORT'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=PORT)
+    socketio.run(app, host='0.0.0.0', port=PORT)

@@ -169,7 +169,7 @@ def test_update_topic_name():
     # Look for an entry that is not completed.
     entry_to_update = None
     for entry in queue_entries:
-        if entry.get("status") in ["Pending", "In Progress"]:
+        if entry.get("status") in ["In Queue", "In Progress"]:
             entry_to_update = entry
             break
     

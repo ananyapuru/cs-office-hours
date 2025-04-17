@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from app.models import Student, db, Queue, Person, ULA, QueueEntry
 from sqlalchemy.sql import func
+from ..auth import roles_required
 
 # Create a Blueprint for the Queue routes
 queue_entry_bp = Blueprint("queue_entry", __name__)
 
 # GET: Get all the queue entries within a Queue
 @queue_entry_bp.route("/queue/course/<course_id>/entries", methods=["GET"])
+@roles_required(['instructor', 'ULA'])
 def get_all_queue_entries_for_course(course_id):
     """Fetches all queue entries for a course."""
     mode = request.args.get("mode")  # optional query parameter
@@ -35,9 +37,42 @@ def get_all_queue_entries_for_course(course_id):
         } for q in queue_entries
     ]), 200
 
+@queue_entry_bp.route("/queue/course/<course_id>/active-entries", methods=["GET"])
+@roles_required(['instructor', 'ULA'])
+def get_active_queue_entries_for_course(course_id):
+    """Fetches only active queue entries for a course (excludes completed entries)."""
+    mode = request.args.get("mode")  # Optional query parameter
+    queue = Queue.query.filter_by(course_id=course_id).first()
+    if not queue:
+        return jsonify({"error": f"Queue for course {course_id} not found"}), 404
+
+    query = QueueEntry.query.filter_by(queue_id=queue.queue_id)
+    # Exclude entries where status is "Completed"
+    query = query.filter(QueueEntry.status != "Completed")
+    if mode:
+        query = query.filter_by(mode=mode)
+    queue_entries = query.order_by(QueueEntry.time_entered).all()
+
+    return jsonify([
+        {
+            "queue_entry_id": q.queue_entry_id,
+            "queue_id": q.queue_id,
+            "net_id": q.net_id,
+            "ula_net_id": q.ula_net_id,
+            "topic_name": q.topic_name,
+            "zoom_link": q.zoom_link,
+            "status": q.status,
+            "mode": q.mode,
+            "time_entered": q.time_entered,
+            "time_started": q.time_started,
+            "time_finished": q.time_finished
+        } for q in queue_entries
+    ]), 200
+
 
 # GET: Fetch queue entries for a student in a specific course
 @queue_entry_bp.route("/queue/course/<course_id>/person/<net_id>", methods=["GET"])
+@roles_required(['instructor', 'ULA'])
 def get_queue_by_student_in_course(course_id, net_id):
     # Verify that the person exists
     person = Person.query.get(net_id)
@@ -77,6 +112,7 @@ def get_queue_by_student_in_course(course_id, net_id):
 
 # POST: Add a student to the queue
 @queue_entry_bp.route("/queue/course/<course_id>/add", methods=["POST"])
+@roles_required(['instructor', 'ULA', 'student'])
 def add_to_queue(course_id):
     # Ensure Queue Exists
     queue = Queue.query.filter_by(course_id=course_id).first()
@@ -98,7 +134,7 @@ def add_to_queue(course_id):
     # Ensure student does not have another active queue entry
     existing_entry = QueueEntry.query.filter_by(
         net_id=data["net_id"], queue_id=queue.queue_id
-    ).filter(QueueEntry.status.in_(["Pending", "In Progress"])).first()
+    ).filter(QueueEntry.status.in_(["In Queue", "In Progress"])).first()
     if existing_entry:
         return jsonify({"error": "Student already has an active queue entry"}), 409
     
@@ -109,7 +145,7 @@ def add_to_queue(course_id):
         ula_net_id = None,
         topic_name = data["topic_name"].strip(),
         zoom_link = data.get("zoom_link", "").strip() or None,
-        status = "Pending",
+        status = "In Queue",
         mode = data.get("mode", "in-person").strip(),
         time_entered = func.now(),
         time_started = None,
@@ -127,6 +163,7 @@ def add_to_queue(course_id):
 
 # PATCH: Complete queue entry (Set to "Completed")
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/complete", methods=["PATCH"])
+@roles_required(['instructor', 'ULA'])
 def complete_queue_entry(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -143,6 +180,7 @@ def complete_queue_entry(queue_entry_id):
 
 # PATCH: Assign a ULA to a queue entry and set to in progress
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/assign", methods=["PATCH"])
+@roles_required(['instructor', 'ULA'])
 def assign_ula(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -173,6 +211,7 @@ def assign_ula(queue_entry_id):
 
 # PATCH: Edit Topic Name
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/topic", methods=["PATCH"])
+@roles_required(['instructor', 'ULA', 'student'])
 def update_topic_name(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -192,6 +231,7 @@ def update_topic_name(queue_entry_id):
 
 # PATCH: Edit Zoom Link
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/zoom", methods=["PATCH"])
+@roles_required(['instructor', 'ULA', 'student'])
 def update_zoom_link(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -211,6 +251,7 @@ def update_zoom_link(queue_entry_id):
 
 # DELETE: Remove Zoom Link (Reset to Empty String / NULL)
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>/zoom", methods=["DELETE"])
+@roles_required(['instructor', 'ULA', 'student'])
 def delete_zoom_link(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:
@@ -226,6 +267,7 @@ def delete_zoom_link(queue_entry_id):
 
 # DELETE: Clear all queue entries for a Queue(Admin use)
 @queue_entry_bp.route("/queue/course/<course_id>/clear", methods=["DELETE"])
+@roles_required(['instructor', 'ULA'])
 def clear_queue_by_course(course_id):
     queue = Queue.query.filter_by(course_id=course_id).first()
     if not queue:
@@ -241,6 +283,7 @@ def clear_queue_by_course(course_id):
 
 # DELETE: Remove a queue entry
 @queue_entry_bp.route("/queue/entry/<int:queue_entry_id>", methods=["DELETE"])
+@roles_required(['instructor' 'ULA', 'student'])
 def delete_queue_entry(queue_entry_id):
     queue_entry = QueueEntry.query.get(queue_entry_id)
     if not queue_entry:

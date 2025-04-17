@@ -1,14 +1,15 @@
 import os
 import re
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, session
 from app.models import db, Person, Student, ULA, Admin
-
+from ..auth import roles_required, login_required
 
 # Create a Blueprint for the Person routes
 person_bp = Blueprint("person", __name__)
 
 # GET: Fetch All Persons
 @person_bp.route("/person", methods = ["GET"])
+@roles_required(['instructor'])
 def get_all_people():
     people = Person.query.all()
     return jsonify([
@@ -24,6 +25,7 @@ def get_all_people():
 
 # GET: Fetch a single person by net_id
 @person_bp.route("/person/<net_id>", methods = ["GET"])
+@login_required
 def get_person(net_id):
     person = Person.query.get(net_id)
     if not person:
@@ -39,6 +41,7 @@ def get_person(net_id):
 
 # POST: Create a new person
 @person_bp.route("/person", methods=["POST"])
+@login_required
 def create_person():
     data = request.json
 
@@ -79,8 +82,12 @@ def create_person():
 
 
 # PUT: Update an existing person
-@person_bp.route("/person/<net_id>", methods=["PUT"])
-def update_person(net_id):
+@person_bp.route("/person", methods=["PUT"])
+@login_required
+def update_person():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
     person = Person.query.get(net_id)
     if not person:
         return jsonify({"error": f"Person with NetID: {net_id} was not found"}), 404
@@ -114,8 +121,12 @@ def update_person(net_id):
     return jsonify({"message": f"Person with NetID: {net_id} was updated successfully"}), 200
 
 # PATCH: Update a specific field (Partial Update)
-@person_bp.route("/person/<net_id>", methods=["PATCH"])
-def patch_person(net_id):
+@person_bp.route("/person", methods=["PATCH"])
+@login_required
+def patch_person():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
     person = Person.query.get(net_id)
     if not person:
         return jsonify({"error": f"Person with NetID: {net_id} was not found"}), 404
@@ -150,6 +161,7 @@ def patch_person(net_id):
 
 # DELETE: Remove a person from the database
 @person_bp.route("/person/<net_id>", methods=["DELETE"])
+@roles_required(['instructor'])
 def delete_person(net_id):
     person = Person.query.get(net_id)
     if not person:
@@ -160,8 +172,11 @@ def delete_person(net_id):
     return jsonify({"message": f"Person with NetID: {net_id} was deleted successfully"}), 200
 
 # GET: All the roles associated with a person
-@person_bp.route("/person/<net_id>/roles", methods=["GET"])
-def get_roles(net_id):
+@person_bp.route("/person/roles", methods=["GET"])
+def get_roles():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
     # Check all our DB for roles
     is_student = db.session.query(Student).filter_by(net_id=net_id).first() is not None
     is_ula = db.session.query(ULA).filter_by(net_id=net_id).first() is not None

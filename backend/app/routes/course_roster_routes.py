@@ -3,12 +3,14 @@ import pandas as pd
 from flask import Blueprint, request, jsonify
 from app.models import db, Person, Student, ULA, Admin, Course
 from app.utils import fetch_from_yalies
+from ..auth import roles_required, login_required
 
 course_roster_bp = Blueprint('course_roster', __name__)
 
 CURRENT_CENTURY = 2000
 
 @course_roster_bp.route('/upload-roster/<course_id>', methods=['POST'])
+@roles_required(['instructor'])
 def upload_roster(course_id):
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
