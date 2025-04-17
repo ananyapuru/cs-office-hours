@@ -58,7 +58,7 @@ const InstructorPage: React.FC = () => {
       try {
         const token = localStorage.getItem('jwtToken');
         const adminRes = await axios.get<AdminEntry[]>(
-          `${API_ENDPOINTS.BACKEND_URL}/admins/person/${user.netId}`, {
+          `${API_ENDPOINTS.BACKEND_URL}/admins/person`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },

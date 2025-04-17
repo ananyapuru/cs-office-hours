@@ -3,7 +3,7 @@ import requests
 import jwt
 from flask_socketio import join_room, emit, disconnect
 from flask import request, current_app
-from app.models import db, Queue, QueueEntry, Course
+from app.models import db, Queue, QueueEntry, Course, Chat, ChatMessage
 from datetime import datetime
 from .auth import socket_roles_required
 
@@ -32,10 +32,33 @@ def fetch_all_entries_for_course(course_id):
         })
     return entries_data
 
+# Helper to fetch all the chat messages for a course
+def fetch_chat_messages_for_course(course_id):
+    chat = Chat.query.filter_by(course_id=course_id).first()
+    if not chat:
+        return []
+
+    messages = ChatMessage.query.filter_by(chat_id=chat.chat_id).order_by(ChatMessage.time_sent).all()
+    return [{
+        'chat_message_id': m.chat_message_id,
+        'net_id': m.net_id,
+        'first_name': m.person.first_name,
+        'last_name': m.person.last_name,
+        'message': m.message,
+        'time_sent': m.time_sent.isoformat()
+    } for m in messages]
+
+
 # Helper to broadcast updated queue to all clients in the room
 def broadcast_queue_update(course_id):
     entries = fetch_all_entries_for_course(course_id)
     emit('queue_updated', {'entries': entries}, room=course_id)
+
+# Helper to broadcast updated chat to all clients in the room
+def broadcast_chat_update(course_id):
+    messages = fetch_chat_messages_for_course(course_id)
+    emit('chat_updated', {'messages': messages}, room=course_id)
+
 
 # Register all Socket.IO event handlers for queue management
 def register_socket_events(socketio):
@@ -232,3 +255,79 @@ def register_socket_events(socketio):
 
         # Broadcast the updated queue
         broadcast_queue_update(course_id)
+
+
+
+
+    ### CHAT
+    @socketio.on('send_chat_message')
+    @socket_roles_required(required_roles=['student', 'ULA', 'instructor'])
+    def handle_send_chat_message(data):
+        course_id = data.get('course_id')
+        message_text = data.get('message')
+
+        if not course_id or not message_text:
+            emit('error', {'message': 'Missing course ID or message'})
+            return
+
+        user = request.environ.get('user', {})
+        net_id = user.get('net_id')
+
+        chat = Chat.query.filter_by(course_id=course_id).first()
+        if not chat:
+            # Create a new chat instance for the course
+            chat = Chat(course_id=course_id)
+            db.session.add(chat)
+            db.session.commit()
+
+        message = ChatMessage(
+            chat_id=chat.chat_id,
+            net_id=net_id,
+            message=message_text.strip()
+        )
+        db.session.add(message)
+        db.session.commit()
+
+        broadcast_chat_update(course_id)
+
+
+    @socketio.on('get_chat_history')
+    @socket_roles_required(required_roles=['student', 'ULA', 'instructor'])
+    def handle_get_chat_history(data):
+        course_id = data.get('course_id')
+        if not course_id:
+            emit('error', {'message': 'Missing course ID'})
+            return
+
+        messages = fetch_chat_messages_for_course(course_id)
+        emit('chat_updated', {'messages': messages})
+
+
+
+    @socketio.on('staff_delete_message')
+
+    @socket_roles_required(required_roles=['instructor', 'ULA', 'admin'])
+    def handle_staff_delete_message(data):
+        course_id = data.get('course_id')
+        chat_message_id = data.get('chat_message_id')
+
+        if not course_id or not chat_message_id:
+            emit('error', {'message': 'Missing course_id or chat_message_id'})
+            return
+
+        # Find the message
+        message = ChatMessage.query.get(chat_message_id)
+        if not message:
+            emit('error', {'message': 'Message not found'})
+            return
+
+        # Confirm it belongs to the right course
+        if message.chat.course_id != course_id:
+            emit('error', {'message': 'Invalid course context'})
+            return
+
+        db.session.delete(message)
+        db.session.commit()
+
+        # Broadcast updated messages
+        broadcast_chat_update(course_id)

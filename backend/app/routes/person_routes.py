@@ -1,6 +1,6 @@
 import os
 import re
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, session
 from app.models import db, Person, Student, ULA, Admin
 from ..auth import roles_required, login_required
 
@@ -82,9 +82,12 @@ def create_person():
 
 
 # PUT: Update an existing person
-@person_bp.route("/person/<net_id>", methods=["PUT"])
+@person_bp.route("/person", methods=["PUT"])
 @login_required
-def update_person(net_id):
+def update_person():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
     person = Person.query.get(net_id)
     if not person:
         return jsonify({"error": f"Person with NetID: {net_id} was not found"}), 404
@@ -118,9 +121,12 @@ def update_person(net_id):
     return jsonify({"message": f"Person with NetID: {net_id} was updated successfully"}), 200
 
 # PATCH: Update a specific field (Partial Update)
-@person_bp.route("/person/<net_id>", methods=["PATCH"])
+@person_bp.route("/person", methods=["PATCH"])
 @login_required
-def patch_person(net_id):
+def patch_person():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
     person = Person.query.get(net_id)
     if not person:
         return jsonify({"error": f"Person with NetID: {net_id} was not found"}), 404
@@ -166,8 +172,11 @@ def delete_person(net_id):
     return jsonify({"message": f"Person with NetID: {net_id} was deleted successfully"}), 200
 
 # GET: All the roles associated with a person
-@person_bp.route("/person/<net_id>/roles", methods=["GET"])
-def get_roles(net_id):
+@person_bp.route("/person/roles", methods=["GET"])
+def get_roles():
+    net_id = session.get("CAS_USERNAME")
+    if not net_id:
+        return jsonify({"error": "Not authenticated"}), 401
     # Check all our DB for roles
     is_student = db.session.query(Student).filter_by(net_id=net_id).first() is not None
     is_ula = db.session.query(ULA).filter_by(net_id=net_id).first() is not None
