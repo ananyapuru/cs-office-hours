@@ -141,7 +141,7 @@ const MetricsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0e1c2c]/70 text-white p-8">
+    <div className="min-h-screen bg-[#0e1c2c] text-white p-8">
       <div className="flex justify-end mb-4">
         <SignOutButton />
       </div>

@@ -118,7 +118,7 @@ const ManageAdminPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0e1c2c]/70 text-white px-6 py-8 relative">
+    <div className="min-h-screen bg-[#0e1c2c] text-white px-6 py-8 relative">
       <div className="absolute top-4 right-6">
         <SignOutButton />
       </div>
@@ -235,7 +235,7 @@ const ManageAdminPage: React.FC = () => {
         </div>
         <button
           onClick={handleAddAdmin}
-          className="mt-4 px-6 py-3 rounded-xl bg-[#0e1c2c]/70 text-white hover:bg-gray-800 transition font-semibold"
+          className="mt-4 px-6 py-3 rounded-xl bg-[#0e1c2c] text-white hover:bg-gray-800 transition font-semibold"
         >
           Add Admin
         </button>

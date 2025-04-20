@@ -1,25 +1,78 @@
-// src/app/components/ThreeDBackground.tsx
+// frontend/src/app/components/ThreeDBackground.tsx
 'use client';
-import React, { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
 
-export default function ThreeDBackground() {
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
+
+const ThreeDBackground: React.FC = () => {
+  const mountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const currentMount = mountRef.current;
+    if (!currentMount) return;
+
+    // Create scene, camera, and renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      currentMount.clientWidth / currentMount.clientHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 5;
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+    currentMount.appendChild(renderer.domElement);
+
+    // Create a cube with Yale Blue color
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x0e1c2c });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    // Animation loop
+    let reqId: number;
+    const animate = () => {
+      cube.rotation.x += 0.01;
+      cube.rotation.y += 0.01;
+      renderer.render(scene, camera);
+      reqId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    // Handle window resize
+    const handleResize = () => {
+      if (!currentMount) return;
+      camera.aspect = currentMount.clientWidth / currentMount.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup on unmount
+    return () => {
+      cancelAnimationFrame(reqId);
+      window.removeEventListener('resize', handleResize);
+      currentMount.removeChild(renderer.domElement);
+      renderer.dispose();
+    };
+  }, []);
+
   return (
-    <Canvas
-      className="absolute inset-0 z-[-1]"
-      camera={{ position: [0, 0, 5], fov: 60 }}
-    >
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 5, 5]} />
-      <Stars radius={100} depth={50} count={5000} factor={4} fade />
-      <Suspense fallback={null}>
-        <mesh rotation={[10, 10, 0]}>
-          <icoSphereBufferGeometry args={[1.5, 4]} />
-          <meshStandardMaterial color="#7ec8e3" wireframe opacity={0.2} transparent />
-        </mesh>
-      </Suspense>
-      <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.2} />
-    </Canvas>
+    <div
+      ref={mountRef}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: -1,
+      }}
+    />
   );
-}
+};
+
+export default ThreeDBackground;

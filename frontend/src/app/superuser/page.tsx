@@ -42,7 +42,7 @@ const SuperuserPage: React.FC = () => {
     const firstName = user.firstName ? `${user.firstName}` : user.netId;
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c]/70 text-white text-center px-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c] text-white text-center px-4">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
                 Hey {firstName}, welcome to the Superuser page!
             </h1>

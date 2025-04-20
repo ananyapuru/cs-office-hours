@@ -14,7 +14,7 @@ const StaffQueuePage: React.FC = () => {
   
   return (
 
-    <div className="min-h-screen bg-[#0e1c2c]/70 text-white">
+    <div className="min-h-screen bg-[#0e1c2c] text-white">
         <button
         onClick={toggleChat}
         className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"

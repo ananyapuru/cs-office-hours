@@ -49,7 +49,7 @@ const CalendarPage: React.FC = () => {
   if (loading) return <p className="text-white text-center mt-10">Loading...</p>;
 
   return (
-    <div className="min-h-screen bg-[#0e1c2c]/70 text-white px-6 py-8 relative flex flex-col items-center">
+    <div className="min-h-screen bg-[#0e1c2c] text-white px-6 py-8 relative flex flex-col items-center">
       <div className="absolute top-4 right-6">
         <SignOutButton />
       </div>
