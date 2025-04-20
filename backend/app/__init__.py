@@ -29,6 +29,7 @@ from .routes.student_routes import student_bp
 from .routes.ula_routes import ula_bp
 from .routes.chat_routes import chat_bp
 from .routes.chat_message_routes import chatmessage_bp
+from .routes.ed_metrics_routes import ed_metrics_bp
 
 def create_app():
     app = Flask(__name__)
@@ -84,11 +85,9 @@ def create_app():
     app.register_blueprint(course_roster_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(chatmessage_bp)
+    app.register_blueprint(ed_metrics_bp)
     
     # socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
     
-    # print("\nRegistered Flask routes:")
-    # for rule in app.url_map.iter_rules():
-    #     print(rule)
 
     return app
