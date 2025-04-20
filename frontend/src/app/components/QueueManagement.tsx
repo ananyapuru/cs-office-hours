@@ -1,11 +1,13 @@
+// src/app/teachingstaff/[courseId]/page.tsx
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import io, { Socket } from 'socket.io-client';
 import axios from 'axios';
-import { API_ENDPOINTS } from '@/app/constants';
 import { useParams, useRouter } from 'next/navigation';
 import SignOutButton from '@/app/components/SignOutButton';
+import ChatBox from '@/app/components/Chat';
+import { API_ENDPOINTS } from '@/app/constants';
 import { formatCourseId } from '@/app/utils/formatters';
 
 interface User {
@@ -15,251 +17,228 @@ interface User {
 }
 
 interface QueueEntry {
-    queue_entry_id: number;
-    net_id: string;
-    first_name: string;
-    last_name: string;
-    topic_name: string;
-    status: string;
-    time_entered: string | null;
+  queue_entry_id: number;
+  net_id: string;
+  first_name: string;
+  last_name: string;
+  topic_name: string;
+  status: string;
+  time_entered: string | null;
 }
 
-interface QueueManagementProps {
-    courseId: string;
-    role: string;
-}
+export default function QueueManagement() {
+  const { courseId } = useParams() as { courseId: string };
+  const router = useRouter();
+  const role = 'staff';
 
-const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => {
-    const router = useRouter();
-    const [queueEntries, setQueueEntries] = useState<QueueEntry[]>([]);
-    const [queueActive, setQueueActive] = useState<boolean>(false);
-    const [error, setError] = useState<string>('');
-    const socketRef = useRef<Socket | null>(null);
-    const [user, setUser] = useState<User | null>(null);
+  const [entries, setEntries] = useState<QueueEntry[]>([]);
+  const [active, setActive] = useState(false);
+  const [error, setError] = useState('');
+  const [user, setUser] = useState<User | null>(null);
+  const [showChat, setShowChat] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
+  const toggleChat = () => setShowChat(v => !v);
 
-    // Function to fetch queue entries via your active entries endpoint
-    const fetchQueueEntries = async () => {
-        try {
-                const token = localStorage.getItem('jwtToken');
-                const res = await axios.get<QueueEntry[]>(
-                `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/active-entries`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    withCredentials: true,
-            });
-            setQueueEntries(res.data);
-        } catch (err) {
-            console.error('Error fetching queue entries:', err);
-            setError('Failed to load queue entries.');
-        }
-    };
+  // REST: fetch entries
+  const fetchEntries = async () => {
+    try {
+      const token = localStorage.getItem('jwtToken');
+      const res = await axios.get<QueueEntry[]>(
+        `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/active-entries`,
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+      );
+      setEntries(res.data);
+    } catch {
+      setError('Could not load queue entries.');
+    }
+  };
 
-    useEffect(() => {
-        if (!courseId) return;
-        const token = localStorage.getItem('jwtToken');
-        if (!token) {
-        setError('Not authenticated');
-        return;
-        }
-        const fetchUser = async () => {
-        try {
-            const res = await axios.get<{ auth: boolean; user?: User }>(
-                `${API_ENDPOINTS.BACKEND_URL}/check`,
-                { withCredentials: true }
-            );
-            if (res.data.auth && res.data.user) {
-                setUser(res.data.user);
-            }
-            } catch (error) {
-                console.error('Error fetching user:', error);
-            }
-        };
+  // REST: fetch status
+  const fetchStatus = async () => {
+    try {
+      const token = localStorage.getItem('jwtToken');
+      const res = await axios.get<{ is_active: boolean }>(
+        `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/status`,
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+      );
+      setActive(res.data.is_active);
+    } catch {
+      /* silent */
+    }
+  };
 
-        // 1) Create socket with token in query
-        const socket = io(API_ENDPOINTS.BACKEND_URL, {
-        query: { token },
-        transports: ['websocket'],
-        });
-        socketRef.current = socket;
+  // socket emitter
+  const emit = (evt: string, data: any) => {
+    if (!socketRef.current) return setError('Socket not connected');
+    socketRef.current.emit(evt, data);
+  };
 
-        // 2) Join the course room
-        socket.on('connect', () => {
-            socket.emit('join_room', { course_id: courseId });
-        })
-        // 3) Listen for updates & errors
-        socket.on('queue_updated', (data) => {
-        setQueueEntries(data.entries);
-        });
-        socket.on('queue_status_updated', (data) => {
-        setQueueActive(data.is_active);
-        });
-        socket.on('error', (err: { message: string }) => {
-        setError(err.message);
-        });
-        socket.on('disconnect', (reason: string) => {
-        if (reason === 'io server disconnect') {
-            // server force‑disconnected us (likely auth failure)
-            setError('Disconnected: authentication failed');
-        }
-        });
+  useEffect(() => {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+      setError('Not authenticated');
+      return;
+    }
 
-        // Fetch initial state
-        fetchUser();
-        fetchQueueStatus();
-        fetchQueueEntries();
+    // fetch user
+    axios
+      .get<{ auth: boolean; user?: User }>(
+        `${API_ENDPOINTS.BACKEND_URL}/check`,
+        { withCredentials: true }
+      )
+      .then(r => {
+        if (r.data.auth && r.data.user) setUser(r.data.user);
+      })
+      .catch(() => setError('Failed to fetch user'));
 
-        // Cleanup on unmount or course change
+    // connect socket
+    const socket = io(API_ENDPOINTS.BACKEND_URL, {
+      query: { token },
+      transports: ['websocket'],
+    });
+    socketRef.current = socket;
+
+    socket.on('connect', () => socket.emit('join_room', { course_id: courseId }));
+    socket.on('queue_updated', (d: any) => setEntries(d.entries));
+    socket.on('queue_status_updated', (d: any) => setActive(d.is_active));
+    socket.on('error', (e: { message: string }) => setError(e.message));
+    socket.on('disconnect', reason => {
+      if (reason === 'io server disconnect') setError('Disconnected: auth failed');
+    });
+
+    fetchStatus();
+    fetchEntries();
+
     return () => {
-        socket.off('connect');
-        socket.off('queue_updated');
-        socket.off('queue_status_updated');
-        socket.off('error');
-        socket.disconnect();
-        };
-    }, [courseId]);
-
-        // Helper to emit with the live socket
-        const emit = (event: string, data: any) => {
-            if (!socketRef.current) {
-            setError('Socket not connected');
-            return;
-            }
-            socketRef.current.emit(event, data);
-        };
-
-    const fetchQueueStatus = async () => {
-        try {
-                const token = localStorage.getItem('jwtToken');
-                const res = await axios.get<{ course_id: string; is_active: boolean }>(
-                `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/status`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    withCredentials: true,
-            });
-            setQueueActive(res.data.is_active);
-        } catch (err) {
-            console.error('Error fetching queue status:', err);
-        }
+      socket.off('connect');
+      socket.off('queue_updated');
+      socket.off('queue_status_updated');
+      socket.off('error');
+      socket.disconnect();
     };
+  }, [courseId]);
 
-    const toggleQueue = (active: boolean) => {
-        setQueueActive(active); // Optimistic update
-        emit('staff_toggle_queue', {
-            course_id: courseId,
-            is_active: active,
-        });
-    };
+  // staff actions
+  const toggleQueue = (on: boolean) => {
+    setActive(on);
+    emit('staff_toggle_queue', { course_id: courseId, is_active: on });
+  };
+  const clearQueue = () => emit('staff_clear_queue', { course_id: courseId });
+  const updateStatus = (id: number, status: string) => {
+    if (!user) return setError('User not loaded');
+    emit('staff_update_entry', {
+      course_id: courseId,
+      queue_entry_id: id,
+      new_status: status,
+      staff_net_id: user.netId,
+    });
+  };
+  const removeEntry = (id: number) =>
+    emit('staff_remove_entry', { course_id: courseId, queue_entry_id: id });
 
-    const handleStatusChange = (entryId: number, newStatus: string) => {
-        //const staffNetId = "jz775"; // TODO: Change this to the actual netid after we implement tokens
-        if (!user) {
-            setError('User not loaded');
-            return;
-        }
-        emit('staff_update_entry', {
-            course_id: courseId,
-            queue_entry_id: entryId,
-            new_status: newStatus,
-            staff_net_id: user.netId,
-        });
-    };
+  return (
+    <div className="
+        min-h-screen w-full
+        bg-[#0e1c2c]/75 text-white
+        p-6 flex flex-col items-center relative
+        overflow-y-auto overflow-x-hidden
+      ">
+      {/* Sign out */}
+      <div className="absolute top-4 right-6">
+        <SignOutButton />
+      </div>
 
-    const handleDeleteEntry = (entryId: number) => {
-        emit('staff_remove_entry', {
-            course_id: courseId,
-            queue_entry_id: entryId,
-        });
-    };
+      <h1 className="text-4xl font-bold mb-6">
+        {formatCourseId(courseId)} Queue ({role})
+      </h1>
 
-    const clearQueue = () => {
-        emit('staff_clear_queue', { course_id: courseId });
-    };
-    
-    return (
-        <div className="min-h-screen w-full p-6 flex flex-col items-center relative">
-            <div className="absolute top-4 right-6">
-                <SignOutButton />
-            </div>
+      {error && <p className="mb-4 text-red-500">{error}</p>}
 
-            <h1 className="text-4xl font-bold mb-6">
-                {formatCourseId(courseId)} Queue ({role})
-            </h1>
+      {/* Controls */}
+      <div className="flex gap-4 mb-6">
+        {active ? (
+          <button
+            onClick={() => toggleQueue(false)}
+            className="px-6 py-3 bg-yellow-400 text-[#0e1c2c] rounded-xl font-bold hover:bg-yellow-500"
+          >
+            Pause Queue
+          </button>
+        ) : (
+          <button
+            onClick={() => toggleQueue(true)}
+            className="px-6 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
+          >
+            Start Queue
+          </button>
+        )}
+        <button
+          onClick={clearQueue}
+          className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700"
+        >
+          Clear Queue
+        </button>
+      </div>
 
-            {error && <p className="text-red-500">{error}</p>}
-
-             <div className="flex gap-4 mb-6">
-                {queueActive ? (
-                    <button
-                        onClick={() => toggleQueue(false)}
-                        className="px-6 py-3 bg-yellow-400 text-[#0e1c2c] rounded-xl font-bold hover:bg-yellow-500"
-                    >
-                        Pause Queue
-                    </button>
-                ) : (
-                    <button
-                        onClick={() => toggleQueue(true)}
-                        className="px-6 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
-                    >
-                        Start Queue
-                    </button>
-                )}
-                <button
-                    onClick={clearQueue}
-                    className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700"
-                >
-                    Clear Queue
-                </button>
-            </div>
-
-            {queueEntries.length === 0 ? (
-                <p>No students in the queue yet.</p>
-            ) : (
-                <ul className="w-full max-w-2xl">
-                    {queueEntries.map((entry) => (
-                    <li
-                        key={entry.queue_entry_id}
-                        className="p-4 border-b border-gray-600 flex justify-between items-center"
-                    >
-                        <div>
-                        <strong>{entry.net_id}</strong> - {entry.topic_name} - <em>{entry.status}</em>
-                        <br />
-                        <small>Joined at: {entry.time_entered}</small>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                            <select
-                                value={entry.status}
-                                onChange={(e) =>
-                                handleStatusChange(entry.queue_entry_id, e.target.value)
-                                }
-                                className="p-2 rounded bg-gray-800 border border-gray-600"
-                            >
-                                <option value="In Queue">In Queue</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Completed">Completed</option>
-                            </select>
-                            <button
-                                onClick={() => handleDeleteEntry(entry.queue_entry_id)}
-                                className="px-4 py-2 bg-red-600 rounded hover:bg-red-700"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </li>
-                    ))}
-                </ul>
-            )}
-    
-            <button
-                onClick={() => router.back()}
-                className="mt-8 px-6 py-3 bg-white text-[#0e1c2c] rounded-xl font-semibold hover:bg-gray-200 transition"
+      {/* Entries */}
+      {entries.length === 0 ? (
+        <p>No students in the queue yet.</p>
+      ) : (
+        <ul className="w-full max-w-2xl">
+          {entries.map(e => (
+            <li
+              key={e.queue_entry_id}
+              className="p-4 border-b border-gray-600 flex justify-between items-center"
             >
-                Back
-            </button>
-        </div>
-    );
-};
+              <div>
+                <strong>{e.net_id}</strong> – {e.topic_name} – <em>{e.status}</em>
+                <br />
+                <small>Joined at: {e.time_entered || 'N/A'}</small>
+              </div>
+              <div className="flex gap-2 items-center">
+                <select
+                  value={e.status}
+                  onChange={evt => updateStatus(e.queue_entry_id, evt.target.value)}
+                  className="p-2 rounded bg-gray-800 border border-gray-600"
+                >
+                  <option>In Queue</option>
+                  <option>In Progress</option>
+                  <option>Completed</option>
+                </select>
+                <button
+                  onClick={() => removeEntry(e.queue_entry_id)}
+                  className="px-4 py-2 bg-red-600 rounded hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
 
-export default QueueManagement;
+      {/* Bottom bar: Back + Chat toggle */}
+      <div className="mt-8 flex gap-4">
+        <button
+          onClick={() => router.back()}
+          className="px-6 py-3 bg-white text-[#0e1c2c] rounded-xl font-semibold hover:bg-gray-200 transition"
+        >
+          Back
+        </button>
+        <button
+          onClick={toggleChat}
+          className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition"
+        >
+          {showChat ? 'Hide Chat' : 'Show Chat'}
+        </button>
+      </div>
+
+      {/* Chat window */}
+      {showChat && (
+        <div className="w-full max-w-4xl mt-4 bg-gray-800 p-4 rounded-lg">
+          <ChatBox courseId={courseId} />
+        </div>
+      )}
+    </div>
+  );
+}

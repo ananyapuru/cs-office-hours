@@ -1,3 +1,4 @@
+// src/app/student/[courseId]/page.tsx
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -7,8 +8,6 @@ import { useParams, useRouter } from 'next/navigation';
 import SignOutButton from '@/app/components/SignOutButton';
 import { API_ENDPOINTS } from '@/app/constants';
 import ChatBox from '@/app/components/Chat'; 
-
-// const socket = io(API_ENDPOINTS.BACKEND_URL);
 
 interface QueueEntry {
   queue_entry_id: number;
@@ -29,20 +28,23 @@ interface User {
 const StudentQueuePage: React.FC = () => {
   const { courseId } = useParams() as { courseId: string };
   const router = useRouter();
+
   const [queueEntries, setQueueEntries] = useState<QueueEntry[]>([]);
   const [queueActive, setQueueActive] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [topic, setTopic] = useState<string>('');
   const [myEntryId, setMyEntryId] = useState<number | null>(null);
   const [myNetId, setMyNetId] = useState<string>('');
+  const [showChat, setShowChat] = useState<boolean>(false);
+
   const socketRef = useRef<Socket | null>(null);
-  const [showChat, setShowChat] = useState(false);
 
   const toggleChat = () => {
-    setShowChat((prev) => !prev);
+    setShowChat(prev => !prev);
   };
 
-   useEffect(() => {
+  // Establish socket & fetch initial data
+  useEffect(() => {
     if (!courseId || !myNetId) return;
 
     const token = localStorage.getItem('jwtToken');
@@ -55,7 +57,7 @@ const StudentQueuePage: React.FC = () => {
       query: { token },
       transports: ['websocket'],
     });
-     
+
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -64,11 +66,8 @@ const StudentQueuePage: React.FC = () => {
 
     socket.on('queue_updated', (data) => {
       setQueueEntries(data.entries);
-
-      // update myEntryId on real‑time change
-      const myEntry = data.entries.find((e: { net_id: string; status: string; }) =>
-        e.net_id === myNetId &&
-        ['In Queue','In Progress'].includes(e.status)
+      const myEntry = data.entries.find((e: any) =>
+        e.net_id === myNetId && ['In Queue','In Progress'].includes(e.status)
       );
       setMyEntryId(myEntry ? myEntry.queue_entry_id : null);
     });
@@ -81,13 +80,12 @@ const StudentQueuePage: React.FC = () => {
       setError(err.message);
     });
 
-    socket.on('disconnect', (reason) => {
+    socket.on('disconnect', (reason: string) => {
       if (reason === 'io server disconnect') {
         setError('Disconnected: authentication failed');
       }
     });
 
-    // Initial REST fetch
     fetchQueueStatus();
     fetchQueueEntries();
 
@@ -100,12 +98,7 @@ const StudentQueuePage: React.FC = () => {
     };
   }, [courseId, myNetId]);
 
-  // First, load user
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
-  // Emit helper
+  // Helper to send socket events
   const emit = (event: string, data: any) => {
     if (!socketRef.current) {
       setError('Socket not connected');
@@ -114,35 +107,39 @@ const StudentQueuePage: React.FC = () => {
     socketRef.current.emit(event, data);
   };
 
-  const fetchUser = async () => {
-    try {
-      const token = localStorage.getItem('jwtToken');
-      const res = await axios.get<{ auth: boolean; user?: User }>(
-        `${API_ENDPOINTS.BACKEND_URL}/check`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              },
-              withCredentials: true,
-            });
-      if (res.data.auth && res.data.user) {
-        setMyNetId(res.data.user.netId);
+  // Load user netId
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('jwtToken');
+        const res = await axios.get<{ auth: boolean; user?: User }>(
+          `${API_ENDPOINTS.BACKEND_URL}/check`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
+        if (res.data.auth && res.data.user) {
+          setMyNetId(res.data.user.netId);
+        }
+      } catch (err) {
+        console.error('Error fetching user info:', err);
+        setError('Failed to load user info.');
       }
-    } catch (err) {
-      console.error('Error fetching user info:', err);
-      setError('Failed to load user info.');
-    }
-  };
+    };
+    fetchUser();
+  }, []);
 
   const fetchQueueStatus = async () => {
     try {
-          const token = localStorage.getItem('jwtToken');
-          const res = await axios.get<{ course_id: string; is_active: boolean }>(
-          `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/status`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              },
-              withCredentials: true,
-      });
+      const token = localStorage.getItem('jwtToken');
+      const res = await axios.get<{ course_id: string; is_active: boolean }>(
+        `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/status`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
       setQueueActive(res.data.is_active);
     } catch (err) {
       console.error('Error fetching queue status:', err);
@@ -151,23 +148,20 @@ const StudentQueuePage: React.FC = () => {
 
   const fetchQueueEntries = async () => {
     try {
-          const token = localStorage.getItem('jwtToken');
-          const res = await axios.get<QueueEntry[]>(
-            `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/active-entries`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              },
-              withCredentials: true,
-          });
-
+      const token = localStorage.getItem('jwtToken');
+      const res = await axios.get<QueueEntry[]>(
+        `${API_ENDPOINTS.BACKEND_URL}/queue/course/${courseId}/active-entries`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
       setQueueEntries(res.data);
-
       const myEntry = res.data.find((entry) =>
         entry.net_id === myNetId &&
-        (entry.status === "In Queue" || entry.status === "In Progress")
+        (entry.status === 'In Queue' || entry.status === 'In Progress')
       );
       setMyEntryId(myEntry ? myEntry.queue_entry_id : null);
-
     } catch (err) {
       console.error('Error fetching queue entries:', err);
     }
@@ -206,23 +200,7 @@ const StudentQueuePage: React.FC = () => {
         <SignOutButton />
       </div>
 
-      <div className="w-full max-w-4xl mb-6">
-        <button
-          onClick={toggleChat}
-          className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          {showChat ? 'Hide Chat' : 'Show Chat'}
-        </button>
-
-        {showChat && (
-          <div className="bg-gray-800 p-4 rounded-lg">
-            <ChatBox courseId={courseId} />
-          </div>
-        )}
-      </div>
-
       <h1 className="text-4xl font-bold mb-6">Course Queue for {courseId}</h1>
-
       {error && <p className="mb-4 text-red-500">{error}</p>}
 
       {!queueActive ? (
@@ -275,26 +253,45 @@ const StudentQueuePage: React.FC = () => {
               {queueEntries.map((entry) => (
                 <tr
                   key={entry.queue_entry_id}
-                  className={`hover:bg-gray-700 ${entry.net_id === myNetId ? 'bg-blue-900' : ''}`}
+                  className={`hover:bg-gray-700 ${
+                    entry.net_id === myNetId ? 'bg-blue-900' : ''
+                  }`}
                 >
                   <td className="p-3">{entry.first_name} {entry.last_name}</td>
                   <td className="p-3">{entry.net_id}</td>
                   <td className="p-3">{entry.topic_name}</td>
                   <td className="p-3">{entry.status}</td>
-                  <td className="p-3">{entry.time_entered ? new Date(entry.time_entered).toLocaleString() : 'N/A'}</td>
+                  <td className="p-3">
+                    {entry.time_entered
+                      ? new Date(entry.time_entered).toLocaleString()
+                      : 'N/A'}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+      <div className="mt-6 flex gap-4">
+        <button
+          onClick={() => router.back()}
+          className="px-6 py-3 bg-white text-[#0e1c2c] rounded-xl font-semibold hover:bg-gray-200 transition"
+        >
+          Back
+        </button>
+        <button
+          onClick={toggleChat}
+          className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition"
+        >
+          {showChat ? 'Hide Chat' : 'Show Chat'}
+        </button>
+      </div>
 
-      <button
-        onClick={() => router.back()}
-        className="mt-6 px-6 py-3 bg-white text-[#0e1c2c] rounded-xl font-semibold hover:bg-gray-200 transition"
-      >
-        Back
-      </button>
+      {showChat && (
+        <div className="w-full max-w-4xl mt-4 bg-gray-800 p-4 rounded-lg">
+          <ChatBox courseId={courseId} />
+        </div>
+      )}
     </div>
   );
 };
