@@ -13,7 +13,7 @@ const HomePage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c] text-white px-4 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c]/75 text-white px-4 text-center">
       <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-8 leading-tight">
         Welcome to <br className="sm:hidden" />
         <span className="text-[#7ec8e3]">CS Office Hours 2.0</span>
