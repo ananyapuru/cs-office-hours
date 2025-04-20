@@ -53,3 +53,115 @@ body {
   }
 }
 
+
+@layer utilities {
+  /* curtain panels */
+  @keyframes curtain-left {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+  }
+  @keyframes curtain-right {
+    from { transform: translateX(0); }
+    to   { transform: translateX(100%); }
+  }
+
+  /* content fade / slide up */
+  @keyframes fade-in-up {
+    0%   { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .curtain-left {
+    @apply absolute top-0 left-0 w-1/2 h-screen bg-[#0e1c2c]/100 z-50;
+    animation: curtain-left 1s ease-out forwards 0.3s;
+  }
+  .curtain-right {
+    @apply absolute top-0 right-0 w-1/2 h-screen bg-[#0e1c2c]/100 z-50;
+    animation: curtain-right 1s ease-out forwards 0.3s;
+  }
+  .fade-in-up {
+    opacity: 0;
+    animation: fade-in-up 1s ease-out forwards 1.4s;
+  }
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* your existing keyframes... */
+
+@layer utilities {
+  /* fade/pop in */
+  @keyframes fade-pop {
+    0%   { opacity: 0; transform: translateY(20px) scale(0.8); }
+    100% { opacity: 1; transform: translateY(0)    scale(1);   }
+  }
+  .fade-pop {
+    opacity: 0;
+    animation: fade-pop 1s ease-out forwards 1.2s;
+  }
+
+  /* gentle float */
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* text shimmer */
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      #7ec8e3 25%,
+      #ffffff 50%,
+      #7ec8e3 75%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s infinite;
+  }
+
+  /* curtain panels (keep if you like) */
+  @keyframes curtain-left {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+  }
+  @keyframes curtain-right {
+    from { transform: translateX(0); }
+    to   { transform: translateX(100%); }
+  }
+  .curtain-left {
+    @apply absolute top-0 left-0 w-1/2 h-screen bg-[#0e1c2c] z-50;
+    animation: curtain-left 1s ease-out forwards 0.3s;
+  }
+  .curtain-right {
+    @apply absolute top-0 right-0 w-1/2 h-screen bg-[#0e1c2c] z-50;
+    animation: curtain-right 1s ease-out forwards 0.3s;
+  }
+}

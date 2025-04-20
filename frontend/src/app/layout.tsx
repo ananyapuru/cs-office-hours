@@ -12,8 +12,6 @@ import { usePathname } from 'next/navigation';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
-  // show on all pages except maybe a bare landing
   const showEffects = pathname !== '/bare-route';
 
   return (
@@ -26,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CssBaseline />
           {showEffects && <ParticlesBackground />}
           {showEffects && <WaveFooter />}
-          <main className="relative z-10 min-h-screen">
+          <main className="relative z-10 min-h-screen flex flex-col">
             {children}
           </main>
         </ThemeProvider>

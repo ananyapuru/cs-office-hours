@@ -179,7 +179,7 @@ const QueueManagement: React.FC<QueueManagementProps> = ({ courseId, role }) => 
     };
     
     return (
-        <div className="min-h-screen bg-[#0e1c2c]/75 text-white p-6 flex flex-col items-center relative">
+        <div className="min-h-screen w-full p-6 flex flex-col items-center relative">
             <div className="absolute top-4 right-6">
                 <SignOutButton />
             </div>
