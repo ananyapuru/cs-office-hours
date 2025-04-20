@@ -43,7 +43,7 @@ const StudentCalendarPage: React.FC = () => {
 
   if (!calendarLink) {
     return (
-      <div className="min-h-screen bg-[#0e1c2c] text-white flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-[#0e1c2c]/70 text-white flex flex-col items-center justify-center">
         <p className="text-2xl mb-6">No Calendar Available for this Course.</p>
         <button
           onClick={() => router.back()}
@@ -56,7 +56,7 @@ const StudentCalendarPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e1c2c] text-white px-6 py-8 flex flex-col items-center relative">
+    <div className="min-h-screen bg-[#0e1c2c]/70 text-white px-6 py-8 flex flex-col items-center relative">
       <div className="absolute top-4 right-6">
         <SignOutButton />
       </div>
