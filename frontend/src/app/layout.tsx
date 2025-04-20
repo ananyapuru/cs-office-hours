@@ -1,31 +1,41 @@
-// frontend/src/app/layout.tsx
+// src/app/layout.tsx
 'use client';
 
-import * as React from 'react';
+import React from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 import './globals.css';
-import dynamic from 'next/dynamic';
+import ParticlesBackground from './components/ParticlesBackground';
+import WaveFooter from './components/WaveFooter';
 import { usePathname } from 'next/navigation';
 
-const ThreeDBackground = dynamic(() => import('./components/ThreeDBackground'), { ssr: false });
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
-
-  const shouldShowBackground = pathname !== '/welcome';
+  // you can selectively disable on specific routes, e.g. '/bare-route'
+  const showEffects = pathname !== '/bare-route';
 
   return (
     <html lang="en">
       <head>
-        <title>CAS App - Yale Blue Edition</title>
+        <title>CS Office Hours 2.0</title>
       </head>
-      <body className="bg-[#0e1c2c] text-white">
+      <body className="relative bg-[#0e1c2c] text-white">
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          {shouldShowBackground && <ThreeDBackground />}
-          {children}
+
+          {/* Particle / wave underlay */}
+          {showEffects && <ParticlesBackground />}
+          {showEffects && <WaveFooter />}
+
+          {/* Your app content sits on a higher z‑layer */}
+          <main className="relative z-10 min-h-screen">
+            {children}
+          </main>
         </ThemeProvider>
       </body>
     </html>

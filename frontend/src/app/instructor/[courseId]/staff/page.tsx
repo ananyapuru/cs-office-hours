@@ -134,7 +134,7 @@ const ManageStaffPage: React.FC = () => {
   if (loading) return <p className="text-white text-center mt-10">Loading...</p>;
 
   return (
-    <div className="min-h-screen bg-[#0e1c2c] text-white px-6 py-8 relative">
+    <div className="min-h-screen bg-[#0e1c2c]/70 text-white px-6 py-8 relative">
       <div className="absolute top-4 right-6">
         <SignOutButton />
       </div>
@@ -191,7 +191,7 @@ const ManageStaffPage: React.FC = () => {
         />
         <button
           onClick={handleAddStaff}
-          className="mt-2 px-6 py-2 rounded bg-[#0e1c2c] text-white hover:bg-gray-800 transition"
+          className="mt-2 px-6 py-2 rounded bg-[#0e1c2c]/70 text-white hover:bg-gray-800 transition"
         >
           Add Staff
         </button>
