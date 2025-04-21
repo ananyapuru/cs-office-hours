@@ -155,6 +155,12 @@ const InstructorPage: React.FC = () => {
                       >
                         Compute Ed Metrics
                       </button>
+                      <button
+                        className="px-4 py-2 bg-[#0e1c2c]/75 text-white rounded-lg hover:bg-green-800 transition"
+                        onClick={() => router.push(`/instructor/queue-metrics`)}
+                      >
+                        Compute Queue Metrics
+                      </button>
                     </div>
                   </td>
                   <td className="px-6 py-3 space-y-2 flex flex-col">
