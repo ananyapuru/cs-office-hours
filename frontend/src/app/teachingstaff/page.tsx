@@ -93,7 +93,7 @@ const TeachingStaffPage: React.FC = () => {
   if (!user) return <p className="text-white text-center mt-10">You are not logged in.</p>;
 
   return (
-    <div className="min-h-screen bg-[#0e1c2c] text-white px-6 py-8 relative">
+    <div className="min-h-screen bg-[#0e1c2c]/75 text-white px-6 py-8 relative">
       <div className="absolute top-4 right-6">
         <SignOutButton />
       </div>
@@ -125,14 +125,7 @@ const TeachingStaffPage: React.FC = () => {
                   <td className="px-6 py-3">{course.academic_year}</td>
                   <td className="px-6 py-3">{course.academic_term}</td>
                   <td className="px-6 py-3 space-y-2 flex flex-col">
-                    <button
-                      className="px-4 py-2 bg-[#0e1c2c] text-white rounded-lg hover:bg-gray-800 transition"
-                      onClick={() => router.push(`/teachingstaff/${course.course_id}/queue`)}
-                    >
-                      View Queue
-                    </button>
-
-                    {course.calendar_link?.trim() && (
+                  {course.calendar_link?.trim() && (
                       <button
                         className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                         onClick={() => router.push(`/student/${course.course_id}/calendar`)}
@@ -140,6 +133,18 @@ const TeachingStaffPage: React.FC = () => {
                         View Course Calendar
                       </button>
                     )}
+                    <button
+                      className="px-4 py-2 bg-[#0e1c2c]/75 text-white rounded-lg hover:bg-gray-800 transition"
+                      onClick={() => router.push(`/teachingstaff/${course.course_id}/queue`)}
+                    >
+                      View Queue
+                    </button>
+                    <button
+                        className="px-4 py-2 bg-[#0e1c2c]/75 text-white rounded-lg hover:bg-green-800 transition"
+                        onClick={() => router.push(`/instructor/metrics`)}
+                      >
+                        Compute Ed Metrics
+                      </button>
                   </td>
                 </tr>
               ))}

@@ -128,7 +128,7 @@ const WelcomePage: React.FC = () => {
   const nameDisplay = user.firstName || user.netId;
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c] text-white px-4">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#0e1c2c]/75 text-white px-4">
       <div className="absolute top-6 right-10">
         <SignOutButton />
       </div>
