@@ -24,8 +24,6 @@ def get_all_ulas():
 @roles_required(['instructor'])
 def get_ulas_by_course(course_id):
     ulas = ULA.query.filter_by(course_id=course_id).all()
-    if not ulas:
-        return jsonify({"error": f"No ULAs found for course {course_id}"}), 404
 
     return jsonify([
         {

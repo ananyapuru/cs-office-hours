@@ -24,11 +24,12 @@ from .routes.course_roster_routes import course_roster_bp
 from .routes.login_routes import login_bp
 from .routes.person_routes import person_bp
 from .routes.queue_routes import queue_bp
-from .routes.queue_entry_routes import queue_entry_bp
+from .routes.queue_entry_routes import queue_entry_bp, test_queue_bp
 from .routes.student_routes import student_bp
 from .routes.ula_routes import ula_bp
 from .routes.chat_routes import chat_bp
 from .routes.chat_message_routes import chatmessage_bp
+from .routes.metric_routes import metrics_bp
 from .routes.ed_metrics_routes import ed_metrics_bp
 
 def create_app():
@@ -85,6 +86,8 @@ def create_app():
     app.register_blueprint(course_roster_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(chatmessage_bp)
+    app.register_blueprint(metrics_bp)
+    app.register_blueprint(test_queue_bp)
     app.register_blueprint(ed_metrics_bp)
     
     # socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')

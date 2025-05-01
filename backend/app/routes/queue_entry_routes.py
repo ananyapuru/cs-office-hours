@@ -31,9 +31,9 @@ def get_all_queue_entries_for_course(course_id):
             "zoom_link": q.zoom_link,
             "status": q.status,
             "mode": q.mode,
-            "time_entered": q.time_entered,
-            "time_started": q.time_started,
-            "time_finished": q.time_finished
+            "time_entered": q.time_entered.isoformat() if q.time_entered else None,
+            "time_started": q.time_started.isoformat() if q.time_started else None,
+            "time_finished": q.time_finished.isoformat() if q.time_finished else None
         } for q in queue_entries
     ]), 200
 
@@ -63,9 +63,9 @@ def get_active_queue_entries_for_course(course_id):
             "zoom_link": q.zoom_link,
             "status": q.status,
             "mode": q.mode,
-            "time_entered": q.time_entered,
-            "time_started": q.time_started,
-            "time_finished": q.time_finished
+            "time_entered": q.time_entered.isoformat() if q.time_entered else None,
+            "time_started": q.time_started.isoformat() if q.time_started else None,
+            "time_finished": q.time_finished.isoformat() if q.time_finished else None
         } for q in queue_entries
     ]), 200
 
@@ -147,7 +147,8 @@ def add_to_queue(course_id):
         zoom_link = data.get("zoom_link", "").strip() or None,
         status = "In Queue",
         mode = data.get("mode", "in-person").strip(),
-        time_entered = func.now(),
+        # time_entered = func.now(),
+        time_entered = datetime.now(timezone.utc),
         time_started = None,
         time_finished = None
     )
@@ -173,7 +174,8 @@ def complete_queue_entry(queue_entry_id):
         return jsonify({"error": "Only In Progress queue entries can be completed"}), 400
     
     queue_entry.status = "Completed"
-    queue_entry.time_finished = func.now()
+    # queue_entry.time_finished = func.now()
+    queue_entry.time_finished = datetime.now(timezone.utc)
     db.session.commit()
 
     return jsonify({"message": f"Queue entry {queue_entry_id} marked as completed"}), 200
@@ -204,7 +206,8 @@ def assign_ula(queue_entry_id):
     
     queue_entry.ula_net_id = data["ula_net_id"]
     queue_entry.status = "In Progress"
-    queue_entry.time_started = func.now()
+    # queue_entry.time_started = func.now()
+    queue_entry.time_started = datetime.now(timezone.utc)
     db.session.commit()
 
     return jsonify({"message": f"ULA {data['ula_net_id']} assigned to queue entry {queue_entry_id}"}), 200
@@ -295,3 +298,40 @@ def delete_queue_entry(queue_entry_id):
     db.session.commit()
 
     return jsonify({"message": f"Queue entry {queue_entry_id} has been removed"}), 200
+
+
+### 
+###
+### FOR TESTING PURPOSES ONLY 
+###
+###
+from datetime import datetime, timezone
+# Create a blueprint for test routes.
+test_queue_bp = Blueprint("test_queue", __name__)
+@test_queue_bp.route("/test/queue/course/<course_id>/add", methods=["POST"])
+
+def test_add_queue_entry(course_id):
+    data = request.get_json()
+    queue = Queue.query.filter_by(course_id=course_id).first()
+    if not queue:
+        return jsonify({"error": "Queue not found"}), 404
+
+    try:
+        entry = QueueEntry(
+            net_id=data["net_id"],
+            queue_id=queue.queue_id,
+            topic_name=data.get("topic_name"),
+            mode=data.get("mode"),
+            time_entered = datetime.fromisoformat(data["time_entered"]).astimezone(timezone.utc),
+            time_started = datetime.fromisoformat(data["time_started"]).astimezone(timezone.utc),
+            time_finished = datetime.fromisoformat(data["time_finished"]).astimezone(timezone.utc),
+        )
+        db.session.add(entry)
+        db.session.commit()
+
+        return jsonify({"queue_entry_id": entry.queue_entry_id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
