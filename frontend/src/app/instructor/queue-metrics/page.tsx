@@ -170,13 +170,8 @@ export default function SingleMetricDashboard({ courseId, token }: { courseId: s
           </button>
         </div>
       </form>
-      {/* <div className="bg-gray-50 p-6 rounded shadow">
+      <div className="bg-gray-50 p-6 rounded shadow">
         {loading ? <p>Loading...</p> : renderResult()}
-      </div> */}
-          <div className="text-center text-black bg-white p-6 rounded shadow">
-         <p className="text-lg">
-          Average Wait Time for <strong>jz775</strong> between <strong>2025-04-15</strong> and <strong>2025-04-21</strong> is <strong>45.34 seconds</strong>.
-        </p>
       </div>
     </div>
   );
